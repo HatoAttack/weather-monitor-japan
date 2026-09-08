@@ -2,17 +2,26 @@ import { useEffect, useRef, useState } from 'react';
 import { Map, NavigationControl } from 'maplibre-gl';
 import { config } from '../../app/config';
 import type { WeatherFrame } from '../../weather/domain/WeatherFrame';
+import type { AmedasMetric, AmedasSnapshot, AmedasStation } from '../../weather/domain/AmedasObservation';
 import { baseMapStyle } from './baseMap';
+import { AmedasLayer } from './AmedasLayer';
 import { RainLayer, type LayerStatus } from './RainLayer';
 
 type Props = {
   frame?: WeatherFrame; visible: boolean; retry: number;
+  amedasSnapshot: AmedasSnapshot | null;
+  amedasMetric: AmedasMetric;
+  amedasVisible: boolean;
   onDisplay: (frame: WeatherFrame) => void;
   onStatus: (status: LayerStatus) => void;
+  onStation: (station: AmedasStation) => void;
 };
-export function WeatherMap({ frame, visible, retry, onDisplay, onStatus }: Props) {
+export function WeatherMap({
+  frame, visible, retry, amedasSnapshot, amedasMetric, amedasVisible, onDisplay, onStatus, onStation,
+}: Props) {
   const container = useRef<HTMLDivElement>(null);
   const rain = useRef<RainLayer | null>(null);
+  const amedas = useRef<AmedasLayer | null>(null);
   const lastRetry = useRef(retry);
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -37,6 +46,7 @@ export function WeatherMap({ frame, visible, retry, onDisplay, onStatus }: Props
     resize.observe(container.current);
     map.on('load', () => {
       rain.current = new RainLayer(map, onDisplay, onStatus);
+      amedas.current = new AmedasLayer(map, onStation);
       setReady(true);
     });
     map.on('error', (event) => {
@@ -50,9 +60,11 @@ export function WeatherMap({ frame, visible, retry, onDisplay, onStatus }: Props
       resize.disconnect();
       rain.current?.destroy();
       rain.current = null;
+      amedas.current?.destroy();
+      amedas.current = null;
       map.remove();
     };
-  }, [onDisplay, onStatus]);
+  }, [onDisplay, onStatus, onStation]);
 
   useEffect(() => {
     if (ready && frame) {
@@ -62,7 +74,10 @@ export function WeatherMap({ frame, visible, retry, onDisplay, onStatus }: Props
     }
   }, [ready, frame, retry]);
   useEffect(() => { rain.current?.setVisible(visible); }, [visible, ready]);
-  return <section className="map-region" aria-label="降水地図">
+  useEffect(() => { if (ready && amedasSnapshot) amedas.current?.setSnapshot(amedasSnapshot); }, [ready, amedasSnapshot]);
+  useEffect(() => { amedas.current?.setMetric(amedasMetric); }, [ready, amedasMetric]);
+  useEffect(() => { amedas.current?.setVisible(amedasVisible); }, [ready, amedasVisible]);
+  return <section className="map-region" aria-label="雨雲とアメダスの地図">
     <div className="map" ref={container} />
     {mapError && <p className="map-error" role="status">{mapError}</p>}
   </section>;

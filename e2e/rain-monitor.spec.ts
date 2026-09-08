@@ -1,10 +1,24 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { baseTile, rainTile } from './fixtures/tiles';
 const time = (minutesAgo: number) => new Date(Math.floor(Date.now() / 300_000) * 300_000 - minutesAgo * 60_000)
   .toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
 const row = (stamp: string) => ({ basetime: stamp, validtime: stamp, elements: ['hrpns'] });
+const amedasTable = {
+  '44132': { lat: [35, 41.4], lon: [139, 45.0], alt: 25, kjName: '東京' },
+  '62078': { lat: [34, 40.9], lon: [135, 31.1], alt: 23, kjName: '大阪' },
+};
+const amedasData = {
+  '44132': { temp: [31.2, 0], precipitation1h: [2.5, 0], windDirection: [4, 0], wind: [3.6, 0] },
+  '62078': { temp: [29.1, 0], precipitation1h: [0, 0], windDirection: [8, 0], wind: [4.1, 0] },
+};
+async function mockAmedas(page: Page) {
+  await page.route('**/amedas/data/latest_time.txt', route => route.fulfill({ body: '2026-09-08T23:30:00+09:00' }));
+  await page.route('**/amedas/const/amedastable.json', route => route.fulfill({ json: amedasTable }));
+  await page.route('**/amedas/data/map/*.json', route => route.fulfill({ json: amedasData }));
+}
 
 test('controls, failed metadata and failed tiles preserve the displayed frame, then recover', async ({ page }) => {
+  await mockAmedas(page);
   const times = [time(10), time(5), time(0)];
   let metadataFails = false;
   let tileFails = false;
@@ -59,6 +73,7 @@ test('controls, failed metadata and failed tiles preserve the displayed frame, t
 });
 
 test('first-load errors allow retry and a narrow layout stays usable', async ({ page }) => {
+  await mockAmedas(page);
   let failed = true;
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/targetTimes_N1.json', route => route.fulfill(failed ? { status: 503 } : { json: [row(time(5)), row(time(0))] }));
@@ -84,6 +99,7 @@ test('live JMA/GSI data renders in the browser', async ({ page }) => {
   await expect(page.getByTestId('displayed-time')).not.toHaveText('未表示', { timeout: 40_000 });
   expect(requests.some(r => r.url.includes('/hrpns/') && r.status === 200)).toBe(true);
   expect(requests.some(r => r.url.includes('cyberjapandata') && r.status === 200)).toBe(true);
+  expect(requests.some(r => r.url.includes('/amedas/data/map/') && r.status === 200)).toBe(true);
   expect(errors).toEqual([]);
   await page.screenshot({ path: 'test-results/live-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
