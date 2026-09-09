@@ -47,7 +47,7 @@ export class RainLayer {
     let settled = false;
     const cleanListeners = () => {
       clearTimeout(timer);
-      this.map.off('idle', onData);
+      this.map.off('render', onData);
       this.map.off('error', onError);
       this.cancelPending = null;
     };
@@ -83,7 +83,9 @@ export class RainLayer {
       this.remove(entry);
     };
     this.onStatus({ phase: 'loading' });
-    this.map.on('idle', onData);
+    // The background map or another weather source can keep the map busy.
+    // After a render, check only the rain source instead of waiting for global idle.
+    this.map.on('render', onData);
     this.map.on('error', onError);
     const timer = setTimeout(fail, config.tileTimeoutMs);
     try {

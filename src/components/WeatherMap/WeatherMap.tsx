@@ -27,6 +27,9 @@ export function WeatherMap({
   const [mapError, setMapError] = useState<string | null>(null);
   useEffect(() => {
     if (!container.current) return;
+    // A recreated map (including development hot reload) has new layer instances.
+    // Reset readiness so the current frame and visibility are applied after load.
+    setReady(false);
     let map: Map;
     try {
       map = new Map({
