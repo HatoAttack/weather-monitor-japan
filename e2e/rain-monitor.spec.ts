@@ -100,6 +100,9 @@ test('live JMA/GSI data renders in the browser', async ({ page }) => {
   expect(requests.some(r => r.url.includes('/hrpns/') && r.status === 200)).toBe(true);
   expect(requests.some(r => r.url.includes('cyberjapandata') && r.status === 200)).toBe(true);
   expect(requests.some(r => r.url.includes('/amedas/data/map/') && r.status === 200)).toBe(true);
+  await page.getByRole('checkbox', { name: '衛星画像を表示' }).check();
+  await expect(page.getByTestId('satellite-time')).not.toHaveText('未表示', { timeout: 25_000 });
+  expect(requests.some(r => r.url.includes('/himawari/data/satimg/') && r.url.endsWith('.jpg') && r.status === 200)).toBe(true);
   expect(errors).toEqual([]);
   await page.screenshot({ path: 'test-results/live-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });

@@ -2,7 +2,7 @@ export type WeatherFrame = {
   id: string;
   observedAt: string;
   fetchedAt: string;
-  layerType: 'precipitation';
+  layerType: 'precipitation' | 'satellite';
   source: string;
   tileTemplate: string;
   minZoom: number;

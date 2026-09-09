@@ -1,6 +1,8 @@
 export const config = {
   pollIntervalMs: 5 * 60_000,
   amedasPollIntervalMs: 10 * 60_000,
+  satellitePollIntervalMs: 10 * 60_000,
+  satelliteStaleAfterMs: 30 * 60_000,
   requestTimeoutMs: 15_000,
   tileTimeoutMs: 20_000,
   staleAfterMs: 15 * 60_000,

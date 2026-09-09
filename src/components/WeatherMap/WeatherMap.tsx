@@ -6,6 +6,7 @@ import type { AmedasMetric, AmedasSnapshot, AmedasStation } from '../../weather/
 import { baseMapStyle } from './baseMap';
 import { AmedasLayer } from './AmedasLayer';
 import { RainLayer, type LayerStatus } from './RainLayer';
+import { SatelliteLayer } from './SatelliteLayer';
 
 type Props = {
   frame?: WeatherFrame; visible: boolean; retry: number;
@@ -15,14 +16,22 @@ type Props = {
   onDisplay: (frame: WeatherFrame) => void;
   onStatus: (status: LayerStatus) => void;
   onStation: (station: AmedasStation) => void;
+  satelliteFrame?: WeatherFrame;
+  satelliteVisible: boolean;
+  satelliteRetry: number;
+  onSatelliteDisplay: (frame: WeatherFrame) => void;
+  onSatelliteStatus: (status: LayerStatus) => void;
 };
 export function WeatherMap({
   frame, visible, retry, amedasSnapshot, amedasMetric, amedasVisible, onDisplay, onStatus, onStation,
+  satelliteFrame, satelliteVisible, satelliteRetry, onSatelliteDisplay, onSatelliteStatus,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const rain = useRef<RainLayer | null>(null);
   const amedas = useRef<AmedasLayer | null>(null);
+  const satellite = useRef<SatelliteLayer | null>(null);
   const lastRetry = useRef(retry);
+  const lastSatelliteRetry = useRef(satelliteRetry);
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   useEffect(() => {
@@ -49,6 +58,7 @@ export function WeatherMap({
     resize.observe(container.current);
     map.on('load', () => {
       rain.current = new RainLayer(map, onDisplay, onStatus);
+      satellite.current = new SatelliteLayer(map, onSatelliteDisplay, onSatelliteStatus);
       amedas.current = new AmedasLayer(map, onStation);
       setReady(true);
     });
@@ -63,12 +73,22 @@ export function WeatherMap({
       resize.disconnect();
       rain.current?.destroy();
       rain.current = null;
+      satellite.current?.destroy();
+      satellite.current = null;
       amedas.current?.destroy();
       amedas.current = null;
       map.remove();
     };
-  }, [onDisplay, onStatus, onStation]);
+  }, [onDisplay, onStatus, onStation, onSatelliteDisplay, onSatelliteStatus]);
 
+  useEffect(() => {
+    if (ready && satelliteFrame) {
+      const force = satelliteRetry !== lastSatelliteRetry.current;
+      lastSatelliteRetry.current = satelliteRetry;
+      satellite.current?.setFrame(satelliteFrame, force);
+    }
+  }, [ready, satelliteFrame, satelliteRetry]);
+  useEffect(() => { satellite.current?.setVisible(satelliteVisible); }, [satelliteVisible, ready]);
   useEffect(() => {
     if (ready && frame) {
       const force = retry !== lastRetry.current;
@@ -80,7 +100,7 @@ export function WeatherMap({
   useEffect(() => { if (ready && amedasSnapshot) amedas.current?.setSnapshot(amedasSnapshot); }, [ready, amedasSnapshot]);
   useEffect(() => { amedas.current?.setMetric(amedasMetric); }, [ready, amedasMetric]);
   useEffect(() => { amedas.current?.setVisible(amedasVisible); }, [ready, amedasVisible]);
-  return <section className="map-region" aria-label="雨雲とアメダスの地図">
+  return <section className="map-region" aria-label="雨雲、アメダス、ひまわり衛星画像の地図">
     <div className="map" ref={container} />
     {mapError && <p className="map-error" role="status">{mapError}</p>}
   </section>;
