@@ -10,6 +10,7 @@ import type { AmedasMetric, AmedasSnapshot, AmedasStation } from '../../weather/
 
 const sourceId = 'amedas-observations';
 const circleId = 'amedas-circles';
+const hitCircleId = 'amedas-click-targets';
 
 type StationProperties = {
   id: string;
@@ -69,11 +70,20 @@ function radii(metric: AmedasMetric): ExpressionSpecification {
     3, ['*', 2.2, valueRadius], 6, ['*', 5.2, valueRadius], 10, ['*', 8, valueRadius]];
 }
 
+const hitRadius: ExpressionSpecification = ['interpolate', ['linear'], ['zoom'], 3, 10, 6, 12, 10, 14];
+
 export class AmedasLayer {
   private stations = new Map<string, AmedasStation>();
 
   constructor(private readonly map: LibreMap, private readonly onStation: (station: AmedasStation) => void) {
     map.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: hitCircleId,
+      type: 'circle',
+      source: sourceId,
+      filter: ['==', ['get', 'hasTemperature'], true],
+      paint: { 'circle-radius': hitRadius, 'circle-opacity': 0 },
+    });
     map.addLayer({
       id: circleId,
       type: 'circle',
@@ -87,9 +97,9 @@ export class AmedasLayer {
         'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 8, 1.5],
       },
     });
-    map.on('click', circleId, this.handleClick);
-    map.on('mouseenter', circleId, this.handleEnter);
-    map.on('mouseleave', circleId, this.handleLeave);
+    map.on('click', hitCircleId, this.handleClick);
+    map.on('mouseenter', hitCircleId, this.handleEnter);
+    map.on('mouseleave', hitCircleId, this.handleLeave);
   }
 
   private handleClick = (event: MapLayerMouseEvent) => {
@@ -115,6 +125,7 @@ export class AmedasLayer {
 
   setMetric(metric: AmedasMetric) {
     const filter: FilterSpecification = ['==', ['get', hasProperty(metric)], true];
+    this.map.setFilter(hitCircleId, filter);
     this.map.setFilter(circleId, filter);
     this.map.setPaintProperty(circleId, 'circle-color', colors(metric));
     this.map.setPaintProperty(circleId, 'circle-radius', radii(metric));
@@ -126,9 +137,10 @@ export class AmedasLayer {
   }
 
   destroy() {
-    this.map.off('click', circleId, this.handleClick);
-    this.map.off('mouseenter', circleId, this.handleEnter);
-    this.map.off('mouseleave', circleId, this.handleLeave);
+    this.map.off('click', hitCircleId, this.handleClick);
+    this.map.off('mouseenter', hitCircleId, this.handleEnter);
+    this.map.off('mouseleave', hitCircleId, this.handleLeave);
+    if (this.map.getLayer(hitCircleId)) this.map.removeLayer(hitCircleId);
     if (this.map.getLayer(circleId)) this.map.removeLayer(circleId);
     if (this.map.getSource(sourceId)) this.map.removeSource(sourceId);
     this.stations.clear();
