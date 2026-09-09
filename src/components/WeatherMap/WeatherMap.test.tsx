@@ -26,6 +26,13 @@ vi.mock('./RainLayer', () => ({
     destroy() {}
   },
 }));
+vi.mock('./SatelliteLayer', () => ({
+  SatelliteLayer: class {
+    setFrame() {}
+    setVisible() {}
+    destroy() {}
+  },
+}));
 vi.mock('./AmedasLayer', () => ({
   AmedasLayer: class {
     setSnapshot() {}
@@ -44,6 +51,7 @@ it('reapplies the selected rain image when the map is recreated', () => {
   const props = {
     frame, visible: true, retry: 0, amedasSnapshot: null, amedasMetric: 'temperature' as const,
     amedasVisible: true, onDisplay: vi.fn(), onStatus: vi.fn(), onStation: vi.fn(),
+    satelliteVisible: false, satelliteRetry: 0, onSatelliteDisplay: vi.fn(), onSatelliteStatus: vi.fn(),
   };
   const view = render(<WeatherMap {...props} />);
   act(() => mocks.loads[0]());
