@@ -65,7 +65,8 @@ function radii(metric: AmedasMetric): ExpressionSpecification {
   const valueRadius: number | ExpressionSpecification = metric === 'temperature'
     ? 1
     : ['interpolate', ['linear'], value, 0, 0.7, metric === 'precipitation' ? 30 : 20, 1.7];
-  return ['*', ['interpolate', ['linear'], ['zoom'], 3, 2.2, 6, 5.2, 10, 8], valueRadius];
+  return ['interpolate', ['linear'], ['zoom'],
+    3, ['*', 2.2, valueRadius], 6, ['*', 5.2, valueRadius], 10, ['*', 8, valueRadius]];
 }
 
 export class AmedasLayer {
