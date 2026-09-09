@@ -42,13 +42,19 @@ export function useAmedasMonitor(loader = fetchAmedas) {
   }, [refresh]);
 
   useEffect(() => {
+    let timer: number;
     const tick = () => {
-      if (!document.hidden && Date.now() - lastAttempt.current >= config.amedasPollIntervalMs) void refresh();
+      window.clearTimeout(timer);
+      if (document.hidden) return;
+      const remaining = config.amedasPollIntervalMs - (Date.now() - lastAttempt.current);
+      if (remaining <= 0) void refresh();
+      // An early timer or a manual update must not postpone the next attempt a full cycle.
+      timer = window.setTimeout(tick, remaining > 0 ? remaining : config.amedasPollIntervalMs);
     };
-    const timer = window.setInterval(tick, config.amedasPollIntervalMs);
+    timer = window.setTimeout(tick, config.amedasPollIntervalMs);
     document.addEventListener('visibilitychange', tick);
     return () => {
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
       document.removeEventListener('visibilitychange', tick);
     };
   }, [refresh]);

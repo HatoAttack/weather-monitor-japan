@@ -47,12 +47,12 @@ test('controls, failed metadata and failed tiles preserve the displayed frame, t
   await page.getByRole('button', { name: '最新へ', exact: true }).click();
   await expect(page.getByTestId('displayed-time')).toHaveText(firstTime!);
   metadataFails = true;
-  await page.getByRole('button', { name: '更新を確認', exact: true }).click();
+  await page.getByRole('button', { name: '雨雲を更新', exact: true }).click();
   await expect(page.getByText('一時的な取得失敗', { exact: true })).toBeVisible();
   await expect(page.getByTestId('displayed-time')).toHaveText(firstTime!);
   metadataFails = false; tileFails = true; rows = [...rows, row(times[2])];
   const beforeFailure = await mapImage();
-  await page.getByRole('button', { name: '更新を確認', exact: true }).click();
+  await page.getByRole('button', { name: '雨雲を更新', exact: true }).click();
   await expect(page.getByText(/降水画像を取得できません/)).toBeVisible();
   await expect(page.getByTestId('displayed-time')).toHaveText(firstTime!);
   expect((await mapImage()).equals(beforeFailure)).toBe(true);
@@ -82,7 +82,7 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
   await expect(page.getByText('一時的な取得失敗', { exact: true })).toBeVisible();
   await expect(page.getByTestId('displayed-time')).toHaveText('未表示');
   failed = false;
-  await page.getByRole('button', { name: '更新を確認', exact: true }).click();
+  await page.getByRole('button', { name: '雨雲を更新', exact: true }).click();
   await expect(page.getByTestId('displayed-time')).not.toHaveText('未表示', { timeout: 30_000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole('checkbox', { name: '自動更新', exact: true }).uncheck();

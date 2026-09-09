@@ -6,6 +6,20 @@ import type { WeatherFrame } from '../weather/domain/WeatherFrame';
 
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); });
 describe('automatic updates', () => {
+  it('waits only the remaining time when a polling timer arrives 1ms early', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+    const loader = vi.fn().mockResolvedValue([]);
+    renderHook(() => useRainMonitor(loader));
+    await act(async () => {});
+    await act(async () => vi.advanceTimersByTimeAsync(config.pollIntervalMs - 1));
+    vi.setSystemTime(Date.now() - 1);
+    await act(async () => vi.advanceTimersByTimeAsync(1));
+    expect(loader).toHaveBeenCalledTimes(1);
+    await act(async () => vi.advanceTimersByTimeAsync(1));
+    expect(loader).toHaveBeenCalledTimes(2);
+  });
+
   it('polls at the configured interval, pauses, resumes and stops on unmount', async () => {
     vi.useFakeTimers();
     const loader = vi.fn().mockResolvedValue([]);
