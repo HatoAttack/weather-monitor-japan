@@ -92,6 +92,8 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
+本番ビルドでアメダスの描画を確認する場合は、`npm run build` の後に `npm run test:e2e -- --config playwright.production.config.ts` を実行します。専用ポート5175でWorkerのHTTP 200、観測地点の丸の描画・クリック・表示切替を検証します。MapLibreのWorkerは `src/main.tsx` でViteのWorkerアセットとして登録し、本番ファイルにも含めます。
+
 通常のブラウザテストは固定の時刻一覧と画像で実行し、外部サービスへアクセスしません。実データの検証は明示的に有効にします。
 
 ```sh
