@@ -137,3 +137,8 @@
 - 再実行：`REAL_TAB_VISIBILITY=1` と `PLAYWRIGHT_CHROME_PATH` を設定し、`npm run test:e2e -- --config playwright.visibility.config.ts`。通常は事前にビルドするが、連続検証中は既存ビルドを使用する。
 - 証跡：`validation-results/visibility/visibility-native-tab-visi-b8e18-esumes-both-weather-sources/` の `summary.json`、`initial.png`、`resumed.png`。
 - この短時間検証と2時間の実時間試験は別の検証であり、それぞれの条件と結果を分けて記録している。
+
+## 地図操作UXの改善
+
+- アメダス表示には見た目の円より広い透明なクリック対象を重ね、ズームレベルが低い場合でも地点を選択しやすくした。
+- 雨雲レイヤーはズーム完了時に最後に読み込めた画像の表示状態を再適用し、ズーム中のタイル入れ替えで一時的に非表示になる状態を抑制した。

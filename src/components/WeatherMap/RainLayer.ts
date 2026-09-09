@@ -18,7 +18,17 @@ export class RainLayer {
     private readonly onStatus: (status: LayerStatus) => void,
   ) {
     this.map.on('error', this.onCurrentError);
+    this.map.on('zoomend', this.onZoomEnd);
   }
+
+  private onZoomEnd = () => {
+    // Reassert the last successful frame after MapLibre replaces the visible
+    // tile set during zooming. This prevents a transient blank raster layer
+    // when the source is overzoomed or underzoomed.
+    if (!this.current || !this.map.getLayer(this.current.layer)) return;
+    this.map.setPaintProperty(this.current.layer, 'raster-opacity', this.visible ? 0.75 : 0);
+    this.map.triggerRepaint();
+  };
 
   private onCurrentError = (event: unknown) => {
     if (this.current && (event as { sourceId?: string }).sourceId === this.current.source) {
@@ -103,6 +113,7 @@ export class RainLayer {
 
   destroy() {
     this.map.off('error', this.onCurrentError);
+    this.map.off('zoomend', this.onZoomEnd);
     this.cancelPending?.();
     if (this.current) this.remove(this.current);
     this.current = null;
