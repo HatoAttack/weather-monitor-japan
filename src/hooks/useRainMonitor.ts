@@ -34,12 +34,19 @@ export function useRainMonitor(loader = fetchPrecipitation) {
     return () => { active.current?.abort(); active.current = null; };
   }, [refresh]);
   useEffect(() => {
+    if (!autoUpdate) return;
+    let timer: number;
     const tick = () => {
-      if (autoUpdate && !document.hidden && Date.now() - lastAttempt.current >= config.pollIntervalMs) void refresh();
+      window.clearTimeout(timer);
+      if (document.hidden) return;
+      const remaining = config.pollIntervalMs - (Date.now() - lastAttempt.current);
+      if (remaining <= 0) void refresh();
+      // Recheck at the actual deadline, including after a manual update.
+      timer = window.setTimeout(tick, remaining > 0 ? remaining : config.pollIntervalMs);
     };
-    const timer = window.setInterval(tick, config.pollIntervalMs);
+    timer = window.setTimeout(tick, config.pollIntervalMs);
     document.addEventListener('visibilitychange', tick);
-    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', tick); };
+    return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', tick); };
   }, [autoUpdate, refresh]);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), config.clockIntervalMs);
