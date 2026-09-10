@@ -3,7 +3,8 @@ import { Map, NavigationControl } from 'maplibre-gl';
 import { config } from '../../app/config';
 import type { WeatherFrame } from '../../weather/domain/WeatherFrame';
 import type { AmedasMetric, AmedasSnapshot, AmedasStation } from '../../weather/domain/AmedasObservation';
-import { baseMapStyle } from './baseMap';
+import { baseMapStyle, type BaseMapFeature } from './baseMap';
+import { BaseMapFeatures } from './BaseMapFeatures';
 import { AmedasLayer } from './AmedasLayer';
 import { RainLayer, type LayerStatus } from './RainLayer';
 import { SatelliteLayer } from './SatelliteLayer';
@@ -21,12 +22,15 @@ type Props = {
   satelliteRetry: number;
   onSatelliteDisplay: (frame: WeatherFrame) => void;
   onSatelliteStatus: (status: LayerStatus) => void;
+  baseMapFeatures: Record<BaseMapFeature, boolean>;
 };
 export function WeatherMap({
   frame, visible, retry, amedasSnapshot, amedasMetric, amedasVisible, onDisplay, onStatus, onStation,
   satelliteFrame, satelliteVisible, satelliteRetry, onSatelliteDisplay, onSatelliteStatus,
+  baseMapFeatures,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
+  const features = useRef<BaseMapFeatures | null>(null);
   const rain = useRef<RainLayer | null>(null);
   const amedas = useRef<AmedasLayer | null>(null);
   const satellite = useRef<SatelliteLayer | null>(null);
@@ -57,6 +61,7 @@ export function WeatherMap({
     const resize = new ResizeObserver(() => map.resize());
     resize.observe(container.current);
     map.on('load', () => {
+      features.current = new BaseMapFeatures(map);
       rain.current = new RainLayer(map, onDisplay, onStatus);
       satellite.current = new SatelliteLayer(map, onSatelliteDisplay, onSatelliteStatus);
       amedas.current = new AmedasLayer(map, onStation);
@@ -77,6 +82,7 @@ export function WeatherMap({
       satellite.current = null;
       amedas.current?.destroy();
       amedas.current = null;
+      features.current = null;
       map.remove();
     };
   }, [onDisplay, onStatus, onStation, onSatelliteDisplay, onSatelliteStatus]);
@@ -97,6 +103,7 @@ export function WeatherMap({
     }
   }, [ready, frame, retry]);
   useEffect(() => { rain.current?.setVisible(visible); }, [visible, ready]);
+  useEffect(() => { if (ready) features.current?.set(baseMapFeatures); }, [ready, baseMapFeatures]);
   useEffect(() => { if (ready && amedasSnapshot) amedas.current?.setSnapshot(amedasSnapshot); }, [ready, amedasSnapshot]);
   useEffect(() => { amedas.current?.setMetric(amedasMetric); }, [ready, amedasMetric]);
   useEffect(() => { amedas.current?.setVisible(amedasVisible); }, [ready, amedasVisible]);

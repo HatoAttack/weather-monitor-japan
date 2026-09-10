@@ -123,3 +123,13 @@ export const baseMapStyle: StyleSpecification = {
     },
   ],
 };
+
+/** Base map details the viewer can switch off, and the style layers behind each. */
+export const baseMapFeatureLayers = {
+  elevation: ['elevation-colour'],
+  contour: ['contour'],
+  river: ['river'],
+  railway: ['railway'],
+} as const;
+
+export type BaseMapFeature = keyof typeof baseMapFeatureLayers;
