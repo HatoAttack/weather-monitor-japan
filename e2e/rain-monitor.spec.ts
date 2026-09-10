@@ -23,6 +23,8 @@ test('controls, failed metadata and failed tiles preserve the displayed frame, t
   let metadataFails = false;
   let tileFails = false;
   let rows = [row(times[0]), row(times[1])];
+  // The nowcast is fetched alongside; these tests cover observations only.
+  await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
   await page.route('**/targetTimes_N1.json', route => metadataFails
     ? route.fulfill({ status: 503, body: 'unavailable' })
     : route.fulfill({ json: rows }));
@@ -45,7 +47,7 @@ test('controls, failed metadata and failed tiles preserve the displayed frame, t
   await page.getByRole('checkbox', { name: '降水レイヤーを表示' }).check();
   await page.getByRole('button', { name: '1つ前の時刻' }).click();
   await expect(page.getByTestId('displayed-time')).not.toHaveText(firstTime!);
-  await page.getByRole('button', { name: '最新へ', exact: true }).click();
+  await page.getByRole('button', { name: '現在へ', exact: true }).click();
   await expect(page.getByTestId('displayed-time')).toHaveText(firstTime!);
   metadataFails = true;
   await page.getByRole('button', { name: '雨雲を更新', exact: true }).click();
@@ -78,6 +80,8 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
   let failed = true;
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/targetTimes_N1.json', route => route.fulfill(failed ? { status: 503 } : { json: [row(time(5)), row(time(0))] }));
+  // The nowcast is fetched alongside; these tests cover observations only.
+  await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({ contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile }));
   await page.goto('/');
@@ -94,6 +98,8 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
 test('precipitation stays visible across zoom levels JMA leaves empty', async ({ page }) => {
   await mockAmedas(page);
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [row(time(5)), row(time(0))] }));
+  // The nowcast is fetched alongside; these tests cover observations only.
+  await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
   const requested: number[] = [];
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => {
@@ -133,6 +139,8 @@ test('playback steps through frames, stops on the newest, repeats and yields to 
   await mockAmedas(page);
   const times = [time(10), time(5), time(0)];
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: times.map(row) }));
+  // The nowcast is fetched alongside; these tests cover observations only.
+  await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({
     contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile,

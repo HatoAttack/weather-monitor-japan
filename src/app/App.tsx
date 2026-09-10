@@ -15,7 +15,7 @@ import { useTimelinePlayer } from '../hooks/useTimelinePlayer';
 import { useSatelliteMonitor } from '../hooks/useSatelliteMonitor';
 import type { AmedasMetric, AmedasStation } from '../weather/domain/AmedasObservation';
 import type { WeatherFrame } from '../weather/domain/WeatherFrame';
-import { isStale } from '../weather/services/monitor';
+import { isStale, latestObservation } from '../weather/services/monitor';
 import { precipitationSource } from '../weather/adapters/jma/precipitation';
 import { amedasSource } from '../weather/adapters/jma/amedas';
 import { himawariSource } from '../weather/adapters/jma/himawari';
@@ -48,11 +48,13 @@ export function App() {
   // Playback swaps frames continuously; per-frame notices would only flicker the panel.
   const pending = !player.playing && monitor.selected && monitor.selected.id !== displayed?.id;
   const selectedStation = amedasMonitor.snapshot?.stations.find(station => station.id === selectedStationId) ?? null;
+  const newestObservation = latestObservation(monitor.frames);
+  const hasForecast = monitor.frames.some(frame => frame.kind === 'forecast');
   const satelliteStale = !!satelliteMonitor.selected
     && monitor.now - Date.parse(satelliteMonitor.selected.observedAt) > config.satelliteStaleAfterMs;
   return <main className="app">
     <header className="app-header">
-      <div className="brand"><span className="brand-mark" aria-hidden="true">☂</span><div><p>WEATHER MONITOR JAPAN <span>v0.4</span></p><h1>日本の気象観測</h1></div></div>
+      <div className="brand"><span className="brand-mark" aria-hidden="true">☂</span><div><p>WEATHER MONITOR JAPAN <span>v0.5</span></p><h1>日本の気象観測</h1></div></div>
       <span className="header-note">雨雲・アメダス・ひまわり</span>
     </header>
     <div className="workspace">
@@ -98,17 +100,22 @@ export function App() {
         </PanelSection>
         <PanelSection
           id="section-rain" className="rain-controls" title="雨雲" subtitle="降水実況" defaultOpen
-          status={<><span className={'status-dot ' + (monitor.error || isStale(monitor.frames.at(-1), monitor.now) ? 'warning' : '')} />
-            <span data-testid="displayed-time">{visible && displayed ? formatTime(displayed.observedAt) : '未表示'}</span></>}
+          status={<><span className={'status-dot ' + (monitor.error || isStale(newestObservation, monitor.now) ? 'warning' : '')} />
+            <span data-testid="displayed-time">{visible && displayed ? formatTime(displayed.observedAt) : '未表示'}</span>
+            {visible && displayed?.kind === 'forecast' && <span className="muted">予測</span>}</>}
         >
           <p className="display-note">{visible ? '地図に表示中のデータ時刻（日本時間）' : '降水レイヤーは非表示'}</p>
+          {visible && displayed?.kind === 'forecast'
+            && <p className="forecast-note">予測 <time>{formatTime(displayed.issuedAt)}</time>時点の1時間先までの見通し</p>}
           {pending && isStale(displayed, monitor.now) && <p className="warning-text">表示中の画像は{config.staleAfterMs / 60_000}分以上前のデータです。</p>}
           {pending && <p className="pending-time">選択中 {formatTime(monitor.selected?.observedAt)}</p>}
           <label className="toggle"><input type="checkbox" checked={visible} onChange={event => setVisible(event.target.checked)} />降水レイヤーを表示</label>
           <Timeline frames={monitor.frames} selectedId={monitor.selectedId} onSelect={player.select}
             playing={player.playing} canPlay={player.canPlay} speedId={player.speedId} speeds={player.speeds}
             loop={player.loop} onTogglePlay={player.toggle} onSpeed={player.setSpeed} onLoop={player.setLoop} />
-          <UpdateStatus state={monitor} autoUpdate={monitor.autoUpdate} stale={isStale(monitor.frames.at(-1), monitor.now)} />
+          <UpdateStatus state={monitor} autoUpdate={monitor.autoUpdate} stale={isStale(newestObservation, monitor.now)} />
+          {!hasForecast && monitor.frames.length > 0
+            && <p className="warning-text">降水予測を取得できていません。実況のみ表示しています。</p>}
           <label className="toggle"><input type="checkbox" checked={monitor.autoUpdate} onChange={event => monitor.setAutoUpdate(event.target.checked)} />自動更新</label>
           <button className="refresh" disabled={monitor.phase === 'loading' || layerStatus.phase === 'loading'} onClick={() => { setRetry(value => value + 1); void monitor.refresh(); }}>雨雲を更新</button>
           <div className="layer-status" role="status">

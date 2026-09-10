@@ -22,19 +22,31 @@ export function monitorReducer(state: MonitorState, action: MonitorAction): Moni
   if (action.type === 'failure') return { ...state, phase: action.kind === 'format' ? 'format-error' : 'network-error', error: action.message };
   if (action.type === 'select') return state.frames.some(frame => frame.id === action.id)
     ? { ...state, selectedId: action.id } : state;
-  const merged = [...new Map([...state.frames, ...action.frames].map(frame => [frame.id, frame])).values()]
-    .sort((a, b) => a.observedAt.localeCompare(b.observedAt));
-  const frames = merged.slice(-config.historyLimit);
-  const newest = frames.at(-1);
-  const wasLatest = !state.selectedId || state.selectedId === state.frames.at(-1)?.id;
-  // Keep a manually selected older frame, even as the rolling history advances.
+  const observed = (frames: WeatherFrame[]) => frames.filter(frame => frame.kind === 'observation');
+  const byTime = (a: WeatherFrame, b: WeatherFrame) => a.observedAt.localeCompare(b.observedAt);
+  const observations = [...new Map([...observed(state.frames), ...observed(action.frames)]
+    .map(frame => [frame.id, frame])).values()].sort(byTime).slice(-config.historyLimit);
+  // A forecast describes one base observation, so the previous set is replaced, never merged.
+  const forecast = action.frames.filter(frame => frame.kind === 'forecast').sort(byTime);
+  const frames = [...observations, ...forecast];
+  const newest = observations.at(-1);
+  const wasLatest = !state.selectedId || state.selectedId === observed(state.frames).at(-1)?.id;
+  // Keep a manually selected older observation, even as the rolling history advances.
   const pinned = state.frames.find(frame => frame.id === state.selectedId);
-  if (!wasLatest && pinned && !frames.some(frame => frame.id === pinned.id)) frames.unshift(pinned);
+  if (!wasLatest && pinned?.kind === 'observation' && !frames.some(frame => frame.id === pinned.id)) {
+    frames.unshift(pinned);
+  }
+  const keepsSelection = !wasLatest && frames.some(frame => frame.id === state.selectedId);
   return {
-    frames, selectedId: wasLatest ? newest?.id ?? null : state.selectedId,
+    frames, selectedId: keepsSelection ? state.selectedId : newest?.id ?? null,
     phase: frames.some(frame => !state.frames.some(old => old.id === frame.id)) ? 'updated' : 'unchanged',
     lastSuccessAt: action.at, error: null,
   };
+}
+
+/** Newest frame that reports what happened, ignoring anything forecast. */
+export function latestObservation(frames: WeatherFrame[]): WeatherFrame | undefined {
+  return frames.filter(frame => frame.kind === 'observation').at(-1);
 }
 
 export function isStale(frame: WeatherFrame | undefined | null, now: number): boolean {

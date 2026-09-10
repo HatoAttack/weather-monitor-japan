@@ -8,6 +8,8 @@ const data = { '99999': { temp: [20, 0], precipitation1h: [0, 0], windDirection:
 
 test('wind arrows point the way the air travels and only show for the wind metric', async ({ page }) => {
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [] }));
+  // The nowcast is fetched alongside; these tests cover observations only.
+  await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
   await page.route('**/amedas/data/latest_time.txt', route => route.fulfill({ body: '2026-09-10T13:00:00+09:00' }));
   await page.route('**/amedas/const/amedastable.json', route => route.fulfill({ json: table }));
   await page.route('**/amedas/data/map/*.json', route => route.fulfill({ json: data }));

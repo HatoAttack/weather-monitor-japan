@@ -36,6 +36,8 @@ test('native tab visibility suppresses polling and resumes both weather sources'
     const errors: string[] = [];
     let stamp = '20260909090000';
     let latestTime = '2026-09-09T18:00:00+09:00';
+    // The nowcast is fetched alongside; this test covers observations only.
+    await context.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
     await context.route('**/targetTimes_N1.json', route => {
       counts.rain++;
       return route.fulfill({ json: [{ basetime: stamp, validtime: stamp, elements: ['hrpns'] }] });

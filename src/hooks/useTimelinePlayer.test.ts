@@ -6,7 +6,7 @@ import type { WeatherFrame } from '../weather/domain/WeatherFrame';
 
 const frame = (minute: number): WeatherFrame => ({
   id: 'frame-' + minute, observedAt: new Date(Date.UTC(2026, 8, 8, 14, minute)).toISOString(),
-  fetchedAt: '2026-09-08T14:00:00.000Z', layerType: 'precipitation', source: 'test',
+  fetchedAt: '2026-09-08T14:00:00.000Z', kind: 'observation', layerType: 'precipitation', source: 'test',
   tileTemplate: 'https://example.com/{z}/{x}/{y}.png', minZoom: 4, maxZoom: 10, bounds: [100, 7, 170, 61], attribution: 'test',
 });
 const frames = [frame(0), frame(5), frame(10)];

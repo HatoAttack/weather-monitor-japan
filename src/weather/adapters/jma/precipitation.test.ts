@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchPrecipitation, normalizeFrames } from './precipitation';
+import { fetchPrecipitation, normalizeForecast, normalizeFrames } from './precipitation';
 const at = '2026-09-08T14:00:00.000Z';
 const row = (time: string, valid = time, elements = ['hrpns']) => ({ basetime: time, validtime: valid, elements });
 afterEach(() => vi.unstubAllGlobals());
@@ -35,5 +35,34 @@ describe('JMA adapter', () => {
     await expect(fetchPrecipitation(new AbortController().signal)).rejects.toMatchObject({ kind: 'network' });
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     await expect(fetchPrecipitation(new AbortController().signal)).rejects.toMatchObject({ kind: 'network' });
+  });
+
+  it('normalizes the nowcast, keeping only times past the observation it came from', () => {
+    const base = '20260908140000';
+    const data = [row(base, '20260908140500'), row(base, '20260908141000'), row(base, base),
+      row(base, '20260908135500'), row(base, '20260908141500', ['other'])];
+    const frames = normalizeForecast(data, at);
+    expect(frames.map(frame => frame.observedAt))
+      .toEqual(['2026-09-08T14:05:00.000Z', '2026-09-08T14:10:00.000Z']);
+    expect(frames[0]).toMatchObject({ kind: 'forecast', issuedAt: '2026-09-08T14:00:00.000Z' });
+    expect(frames[0].tileTemplate).toContain('/20260908140000/none/20260908140500/surf/hrpns/');
+    expect(normalizeForecast([], at)).toEqual([]);
+    expect(() => normalizeForecast({}, at)).toThrow();
+  });
+
+  it('adds the nowcast to the observations, and keeps the observations when it fails', async () => {
+    const observations = [row('20260908135500')];
+    const forecast = [row('20260908135500', '20260908140000')];
+    const reply = (body: unknown) => new Response(JSON.stringify(body));
+    vi.stubGlobal('fetch', vi.fn((url: string) =>
+      Promise.resolve(reply(url.includes('N2') ? forecast : observations))));
+    const frames = await fetchPrecipitation(new AbortController().signal);
+    expect(frames.map(frame => frame.kind)).toEqual(['observation', 'forecast']);
+
+    vi.stubGlobal('fetch', vi.fn((url: string) => url.includes('N2')
+      ? Promise.reject(new TypeError('offline'))
+      : Promise.resolve(reply(observations))));
+    const withoutForecast = await fetchPrecipitation(new AbortController().signal);
+    expect(withoutForecast.map(frame => frame.kind)).toEqual(['observation']);
   });
 });
