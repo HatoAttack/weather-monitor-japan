@@ -17,6 +17,7 @@ const speedOf = (id: PlaybackSpeedId) =>
 /** Steps through the retained frames, one loaded image at a time. */
 export function useTimelinePlayer({ frames, selectedId, displayedId, enabled, onSelect }: Options) {
   const [requested, setRequested] = useState(false);
+  const [loop, setLoop] = useState<boolean>(config.playback.loopByDefault);
   const [speedId, setSpeedId] = useState<PlaybackSpeedId>(config.playback.defaultSpeedId);
   // Read through a ref so an unmemoized callback cannot restart the frame timer.
   const select = useRef(onSelect);
@@ -28,11 +29,17 @@ export function useTimelinePlayer({ frames, selectedId, displayedId, enabled, on
   useEffect(() => {
     if (!playing) return;
     const index = frames.findIndex(frame => frame.id === selectedId);
+    const loaded = displayedId === selectedId;
+    let timer = 0;
+    // Without repeat, playback ends on the newest frame instead of wrapping around.
+    if (index === frames.length - 1 && !loop) {
+      timer = window.setTimeout(() => setRequested(false), loaded ? 0 : config.playback.frameWaitMs);
+      return () => window.clearTimeout(timer);
+    }
     const next = frames[(index + 1) % frames.length];
-    const delay = displayedId !== selectedId ? config.playback.frameWaitMs
+    const delay = !loaded ? config.playback.frameWaitMs
       : index === frames.length - 1 ? config.playback.lastFrameHoldMs
         : speedOf(speedId).frameIntervalMs;
-    let timer = 0;
     const start = () => {
       window.clearTimeout(timer);
       // A background tab cannot show the animation, so it should not request tiles for it.
@@ -42,12 +49,20 @@ export function useTimelinePlayer({ frames, selectedId, displayedId, enabled, on
     start();
     document.addEventListener('visibilitychange', start);
     return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', start); };
-  }, [playing, frames, selectedId, displayedId, speedId]);
+  }, [playing, frames, selectedId, displayedId, speedId, loop]);
+
+  const toggle = useCallback(() => {
+    if (requested) { setRequested(false); return; }
+    // Starting from the newest frame replays from the oldest one.
+    const index = frames.findIndex(frame => frame.id === selectedId);
+    if (frames.length > 1 && index === frames.length - 1) select.current(frames[0].id);
+    setRequested(true);
+  }, [requested, frames, selectedId]);
 
   return {
-    playing, canPlay, speedId, speeds: config.playback.speeds,
-    toggle: useCallback(() => setRequested(value => !value), []),
+    playing, canPlay, speedId, loop, speeds: config.playback.speeds, toggle,
     setSpeed: useCallback((id: PlaybackSpeedId) => setSpeedId(id), []),
+    setLoop: useCallback((value: boolean) => setLoop(value), []),
     // Choosing a time by hand stops playback, so the chosen frame stays on screen.
     select: useCallback((id: string) => { setRequested(false); onSelect(id); }, [onSelect]),
   };

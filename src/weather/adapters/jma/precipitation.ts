@@ -1,4 +1,5 @@
 import { config } from '../../../app/config';
+import { rainTileScheme } from './rainTiles';
 import { WeatherDataError, type WeatherFrame } from '../../domain/WeatherFrame';
 
 const root = 'https://www.jma.go.jp/bosai/jmatile/data/nowc';
@@ -37,7 +38,8 @@ export function normalizeFrames(data: unknown, fetchedAt: string, now = Date.now
     frames.push({
       id: 'rain-' + item.validtime, observedAt, fetchedAt, layerType: 'precipitation',
       source: precipitationSource.name,
-      tileTemplate: root + '/' + item.basetime + '/none/' + item.validtime + '/surf/hrpns/{z}/{x}/{y}.png',
+      // Requests go through the tile protocol, which fills the zoom levels JMA leaves empty.
+      tileTemplate: rainTileScheme + '://' + root + '/' + item.basetime + '/none/' + item.validtime + '/surf/hrpns/{z}/{x}/{y}.png',
       minZoom: 4, maxZoom: 10, bounds: [100, 7, 170, 61], attribution: precipitationSource.attribution,
     });
   }

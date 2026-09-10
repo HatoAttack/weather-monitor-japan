@@ -18,14 +18,16 @@ test('built app loads its worker and renders selectable AMeDAS circles', async (
   const workerResponse = page.waitForResponse(response => response.url().includes('maplibre-gl-worker'));
   await page.goto('/');
   expect((await workerResponse).status()).toBe(200);
+  // Collapsed sections keep the panel short; open the one under test.
+  await page.locator('#section-amedas > summary').click();
   const canvas = page.locator('canvas');
   const bounds = (await canvas.boundingBox())!;
   // The fixture is at the configured initial map center, outside the control panel.
   await expect(async () => {
     await canvas.click({ position: { x: bounds.width / 2, y: bounds.height / 2 } });
-    await expect(page.locator('.station-details')).toContainText('検証地点');
+    await expect(page.locator('.station-card')).toContainText('検証地点');
   }).toPass({ timeout: 10_000 });
-  await expect(page.locator('.station-details')).toContainText('25.0℃');
+  await expect(page.locator('.station-card')).toContainText('25.0℃');
   const clip = { x: bounds.x + bounds.width / 2 - 20, y: bounds.y + bounds.height / 2 - 20, width: 40, height: 40 };
   const withCircle = await page.screenshot({ clip });
   const toggle = page.getByRole('checkbox', { name: '観測値を地図に表示' });
