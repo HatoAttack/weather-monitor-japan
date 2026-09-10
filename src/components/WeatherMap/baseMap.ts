@@ -11,10 +11,11 @@ import type { StyleSpecification } from 'maplibre-gl';
  */
 const vectorTiles = 'https://cyberjapandata.gsi.go.jp/xyz/optimal_bvmap-v1/{z}/{x}/{y}.pbf';
 const rasterTiles = 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png';
+const shadeTiles = 'https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png';
 const gsi = (label: string) =>
   '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">' + label + '</a>';
 
-const land = '#f2f5f1';
+const land = '#e7eede';
 const sea = '#d9e8ee';
 
 export const baseMapStyle: StyleSpecification = {
@@ -24,6 +25,10 @@ export const baseMapStyle: StyleSpecification = {
     basemap: {
       type: 'raster', tiles: [rasterTiles], tileSize: 256, minzoom: 2, maxzoom: 18,
       attribution: gsi('地理院タイル'),
+    },
+    shade: {
+      type: 'raster', tiles: [shadeTiles], tileSize: 256, minzoom: 2, maxzoom: 16,
+      attribution: gsi('陰影起伏図'),
     },
     detail: {
       type: 'vector', tiles: [vectorTiles], minzoom: 4, maxzoom: 16,
@@ -39,10 +44,15 @@ export const baseMapStyle: StyleSpecification = {
       paint: {
         // Fades in exactly where the vector tiles stop carrying land and coastline.
         'raster-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 7.5, 1],
-        'raster-saturation': 0.1,
-        'raster-contrast': -0.5,
-        'raster-brightness-min': 0.84,
+        'raster-saturation': 0.2,
+        'raster-contrast': -0.15,
+        'raster-brightness-min': 0.45,
       },
+    },
+    {
+      // Relief shading carries no text or roads, so terrain can be read without clutter.
+      id: 'relief', type: 'raster', source: 'shade',
+      paint: { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.3, 8, 0.4, 12, 0.42] },
     },
     { id: 'water', type: 'fill', source: 'detail', 'source-layer': 'WA', paint: { 'fill-color': sea } },
     {
@@ -70,7 +80,7 @@ export const baseMapStyle: StyleSpecification = {
         // Observations are the reason for the map, so a name never hides one.
         'text-ignore-placement': true,
       },
-      paint: { 'text-color': '#54707e', 'text-halo-color': '#ffffffdd', 'text-halo-width': 1.4 },
+      paint: { 'text-color': '#3d5561', 'text-halo-color': '#ffffffdd', 'text-halo-width': 1.4 },
     },
   ],
 };
