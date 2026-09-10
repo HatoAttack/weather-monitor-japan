@@ -1,7 +1,12 @@
+import type { PlaybackSpeed, PlaybackSpeedId } from '../../app/config';
 import type { WeatherFrame } from '../../weather/domain/WeatherFrame';
 import { formatTime } from '../../utils/time';
-type Props = { frames: WeatherFrame[]; selectedId: string | null; onSelect: (id: string) => void };
-export function Timeline({ frames, selectedId, onSelect }: Props) {
+type Props = {
+  frames: WeatherFrame[]; selectedId: string | null; onSelect: (id: string) => void;
+  playing: boolean; canPlay: boolean; speedId: PlaybackSpeedId; speeds: readonly PlaybackSpeed[];
+  onTogglePlay: () => void; onSpeed: (id: PlaybackSpeedId) => void;
+};
+export function Timeline({ frames, selectedId, onSelect, playing, canPlay, speedId, speeds, onTogglePlay, onSpeed }: Props) {
   const index = frames.findIndex(frame => frame.id === selectedId);
   return <section className="timeline" aria-label="降水データの時刻切替">
     <div className="timeline-heading">
@@ -21,5 +26,14 @@ export function Timeline({ frames, selectedId, onSelect }: Props) {
       aria-valuetext={formatTime(frames[index]?.observedAt)}
       onChange={event => onSelect(frames[Number(event.target.value)].id)} />
     <div className="timeline-ends"><span>{formatTime(frames[0]?.observedAt)}</span><span>{formatTime(frames.at(-1)?.observedAt)}</span></div>
+    <div className="timeline-player">
+      <button className="play-button" aria-pressed={playing} disabled={!canPlay} onClick={onTogglePlay}>
+        <span aria-hidden="true">{playing ? '❙❙' : '▶'}</span>{playing ? '一時停止' : '再生'}
+      </button>
+      <fieldset className="speed-picker" disabled={!canPlay}>
+        <legend>再生速度</legend>
+        <div>{speeds.map(speed => <button key={speed.id} aria-pressed={speed.id === speedId} onClick={() => onSpeed(speed.id)}>{speed.label}</button>)}</div>
+      </fieldset>
+    </div>
   </section>;
 }

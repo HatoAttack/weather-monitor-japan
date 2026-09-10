@@ -89,6 +89,55 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
   await expect(page.getByText('自動更新は停止中')).toBeVisible();
 });
 
+test('playback steps through frames, loops, and stops on manual control', async ({ page }) => {
+  await mockAmedas(page);
+  const times = [time(10), time(5), time(0)];
+  await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: times.map(row) }));
+  await page.route('**/*.png', route => route.fulfill({
+    contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile,
+  }));
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  const displayed = page.getByTestId('displayed-time');
+  await expect(displayed).not.toHaveText('未表示', { timeout: 30_000 });
+  const latest = await displayed.textContent();
+  const play = page.getByRole('button', { name: '再生', exact: true });
+  const pause = page.getByRole('button', { name: '一時停止', exact: true });
+
+  const slow = page.getByRole('button', { name: '低速', exact: true });
+  await slow.click();
+  await expect(slow).toHaveAttribute('aria-pressed', 'true');
+  await play.click();
+  // Playback leaves the newest frame, then returns to it after cycling the retained frames.
+  await expect(displayed).not.toHaveText(latest!, { timeout: 20_000 });
+  await expect(displayed).toHaveText(latest!, { timeout: 20_000 });
+
+  // The selected time is the frame playback steps through, independent of image loading.
+  const selected = page.locator('#frame-time');
+  await pause.click();
+  await expect(play).toBeVisible();
+  const paused = await selected.inputValue();
+  await page.waitForTimeout(3_000);
+  expect(await selected.inputValue()).toBe(paused);
+
+  // A hidden precipitation layer has nothing to animate.
+  await page.getByRole('checkbox', { name: '降水レイヤーを表示' }).uncheck();
+  await expect(play).toBeDisabled();
+  await page.getByRole('checkbox', { name: '降水レイヤーを表示' }).check();
+  await expect(play).toBeEnabled();
+
+  // Choosing a time by hand stops playback and keeps that frame on screen.
+  await play.click();
+  await page.getByRole('button', { name: '1つ前の時刻' }).click();
+  await expect(play).toBeVisible();
+  const chosen = await selected.inputValue();
+  await page.waitForTimeout(3_000);
+  expect(await selected.inputValue()).toBe(chosen);
+  await expect(displayed).not.toHaveText('未表示');
+  expect(errors).toEqual([]);
+});
+
 test('live JMA/GSI data renders in the browser', async ({ page }) => {
   test.skip(process.env.LIVE_WEATHER !== '1', 'Opt-in test makes requests to external data sources.');
   const requests: { url: string; status: number }[] = [];
