@@ -50,6 +50,7 @@ test('native tab visibility suppresses polling and resumes both weather sources'
     await context.route('**/amedas/data/map/*.json', route => route.fulfill({ json: {
       '44132': { temp: [30, 0], precipitation1h: [0, 0], windDirection: [4, 0], wind: [3, 0] },
     } }));
+    await context.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
     await context.route('**/*.png', route => route.fulfill({
       contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile,
     }));

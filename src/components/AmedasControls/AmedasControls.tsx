@@ -23,7 +23,7 @@ const metrics: { id: AmedasMetric; label: string }[] = [
 const scaleLabels: Record<AmedasMetric, [string, string]> = {
   temperature: ['−20℃', '35℃'],
   precipitation: ['0mm', '80mm以上'],
-  wind: ['0m/s', '30m/s'],
+  wind: ['0m/s', '25m/s以上'],
 };
 
 type Props = {
@@ -55,7 +55,7 @@ export function AmedasControls({
     <p className="legend-note">
       {metric === 'temperature' && '寒色から暖色へ、気温の低い地点から高い地点を示します。'}
       {metric === 'precipitation' && '青から紫へ、直近1時間の降水量が多い地点を示します。'}
-      {metric === 'wind' && '色は風速を示します。地点詳細で風向を確認できます。'}
+      {metric === 'wind' && '矢印は風が吹いていく向き、長さは風速を示します。色も風速です。矢印が重なる地点は、拡大すると表示されます。'}
     </p>
     <div className={`metric-scale ${metric}`} aria-label={`${scaleLabels[metric][0]}から${scaleLabels[metric][1]}までの色分け`}>
       <span>{scaleLabels[metric][0]}</span><i aria-hidden="true" /><span>{scaleLabels[metric][1]}</span>

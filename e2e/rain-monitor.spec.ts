@@ -26,6 +26,7 @@ test('controls, failed metadata and failed tiles preserve the displayed frame, t
   await page.route('**/targetTimes_N1.json', route => metadataFails
     ? route.fulfill({ status: 503, body: 'unavailable' })
     : route.fulfill({ json: rows }));
+  await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => tileFails && route.request().url().includes('/' + times[2] + '/')
     ? route.fulfill({ status: 503, body: 'unavailable' })
     : route.fulfill({ contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile }));
@@ -77,6 +78,7 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
   let failed = true;
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route('**/targetTimes_N1.json', route => route.fulfill(failed ? { status: 503 } : { json: [row(time(5)), row(time(0))] }));
+  await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({ contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile }));
   await page.goto('/');
   await expect(page.getByText('一時的な取得失敗', { exact: true })).toBeVisible();
@@ -93,6 +95,7 @@ test('precipitation stays visible across zoom levels JMA leaves empty', async ({
   await mockAmedas(page);
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [row(time(5)), row(time(0))] }));
   const requested: number[] = [];
+  await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => {
     const url = route.request().url();
     if (!url.includes('/hrpns/')) return route.fulfill({ contentType: 'image/png', body: baseTile });
@@ -130,6 +133,7 @@ test('playback steps through frames, stops on the newest, repeats and yields to 
   await mockAmedas(page);
   const times = [time(10), time(5), time(0)];
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: times.map(row) }));
+  await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({
     contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile,
   }));

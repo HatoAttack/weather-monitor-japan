@@ -14,6 +14,7 @@ test('built app loads its worker and renders selectable AMeDAS circles', async (
   await page.route('**/amedas/data/map/*.json', route => route.fulfill({ json: {
     '99999': { temp: [25, 0], precipitation1h: [5, 0], windDirection: [4, 0], wind: [3, 0] },
   } }));
+  await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({ contentType: 'image/png', body: baseTile }));
   const workerResponse = page.waitForResponse(response => response.url().includes('maplibre-gl-worker'));
   await page.goto('/');
