@@ -64,10 +64,10 @@ export function WeatherMap({
     });
     map.on('error', (event) => {
       const sourceId = (event as { sourceId?: string }).sourceId;
-      if (sourceId === 'basemap') setMapError('背景地図の一部を取得できません。読み込み済みの範囲を表示しています。');
+      if (sourceId === 'basemap' || sourceId === 'detail') setMapError('背景地図の一部を取得できません。読み込み済みの範囲を表示しています。');
     });
     map.on('sourcedata', event => {
-      if (event.sourceId === 'basemap' && event.sourceDataType === 'content') setMapError(null);
+      if ((event.sourceId === 'basemap' || event.sourceId === 'detail') && event.sourceDataType === 'content') setMapError(null);
     });
     return () => {
       resize.disconnect();

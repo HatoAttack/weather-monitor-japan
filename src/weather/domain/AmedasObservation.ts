@@ -33,3 +33,18 @@ export function windDirectionArrow(value: number | null): string {
   if (value === null || value === 0) return value === 0 ? '・' : '';
   return ['↓', '↙', '←', '↖', '↑', '↗', '→', '↘'][Math.round((value - 1) / 2) % 8];
 }
+
+/**
+ * JMA reports the direction the wind blows *from*, in 16 steps (1 = 北北東, 16 = 北).
+ * Map arrows point the way the air travels, so the reported bearing is turned around.
+ */
+export function windBearing(direction: number | null): number | null {
+  if (direction === null || !Number.isInteger(direction) || direction < 1 || direction > 16) return null;
+  return (direction * 22.5 + 180) % 360;
+}
+
+/** Arrow length as a share of the longest arrow, so speed is readable without colour. */
+export function windLength(speed: number | null, longest = 20): number {
+  if (speed === null || !(speed > 0)) return 0;
+  return 0.3 + Math.min(speed, longest) / longest * 0.7;
+}

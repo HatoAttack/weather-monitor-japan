@@ -31,7 +31,7 @@ Goal:
 
 Status:
 
-`codex/v0.2-amedas` で実装。
+`codex/v0.2-amedas` で実装。風の表示は v0.4 後に矢印へ変更。
 
 Candidate data:
 
