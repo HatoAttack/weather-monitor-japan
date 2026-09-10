@@ -51,14 +51,39 @@ describe('timeline playback', () => {
     expect(onSelect).toHaveBeenCalledWith(frames[1].id);
   });
 
-  it('holds on the newest frame, then loops back to the oldest', async () => {
+  it('replays from the oldest frame when started on the newest', () => {
     vi.useFakeTimers();
     const { result, onSelect } = render({ selectedId: frames[2].id, displayedId: frames[2].id });
     act(() => result.current.toggle());
-    await act(async () => vi.advanceTimersByTimeAsync(interval));
-    expect(onSelect).not.toHaveBeenCalled();
-    await act(async () => vi.advanceTimersByTimeAsync(lastFrameHoldMs - interval));
     expect(onSelect).toHaveBeenCalledWith(frames[0].id);
+  });
+
+  it('stops on the newest frame when repeat is off', async () => {
+    vi.useFakeTimers();
+    const { result, rerender, onSelect, initialProps } = render({ selectedId: frames[1].id, displayedId: frames[1].id });
+    expect(result.current.loop).toBe(false);
+    act(() => result.current.toggle());
+    await act(async () => vi.advanceTimersByTimeAsync(interval));
+    expect(onSelect).toHaveBeenCalledWith(frames[2].id);
+    rerender({ ...initialProps, selectedId: frames[2].id, displayedId: frames[2].id });
+    await act(async () => vi.advanceTimersByTimeAsync(1));
+    expect(result.current.playing).toBe(false);
+    await act(async () => vi.advanceTimersByTimeAsync(lastFrameHoldMs * 2));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds on the newest frame, then loops back to the oldest when repeat is on', async () => {
+    vi.useFakeTimers();
+    const { result, rerender, onSelect, initialProps } = render({ selectedId: frames[1].id, displayedId: frames[1].id });
+    act(() => { result.current.setLoop(true); result.current.toggle(); });
+    await act(async () => vi.advanceTimersByTimeAsync(interval));
+    expect(onSelect).toHaveBeenCalledWith(frames[2].id);
+    rerender({ ...initialProps, selectedId: frames[2].id, displayedId: frames[2].id });
+    await act(async () => vi.advanceTimersByTimeAsync(interval));
+    expect(onSelect).toHaveBeenCalledTimes(1);
+    await act(async () => vi.advanceTimersByTimeAsync(lastFrameHoldMs - interval));
+    expect(onSelect).toHaveBeenLastCalledWith(frames[0].id);
+    expect(result.current.playing).toBe(true);
   });
 
   it('gives up on a frame that never displays instead of stalling', async () => {

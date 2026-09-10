@@ -11,6 +11,7 @@ describe('JMA adapter', () => {
     expect(frames.map(frame => frame.observedAt)).toEqual(['2026-09-08T13:50:00.000Z', '2026-09-08T13:55:00.000Z']);
     expect(frames[1]).toMatchObject({ layerType: 'precipitation', fetchedAt: at, source: '気象庁' });
     expect(frames[1].tileTemplate).toContain('/20260908135500/none/20260908135500/surf/hrpns/{z}/{x}/{y}.png');
+    expect(frames[1].tileTemplate.startsWith('jma-rain://https://')).toBe(true);
   });
   it.each([null, {}, [], [row('../202609081400')], [row('20260230140000')], [{}],
     [row('20260908140000', undefined, [])]])('rejects malformed or unusable payloads: %j', data => {

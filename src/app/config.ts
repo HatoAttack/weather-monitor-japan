@@ -19,6 +19,8 @@ export const config = {
       { id: 'fast', label: '高速', frameIntervalMs: 350 },
     ],
     defaultSpeedId: 'normal',
+    // Playback ends on the newest frame unless the viewer asks for repeat.
+    loopByDefault: false,
     // Pause on the newest frame before looping back to the oldest.
     lastFrameHoldMs: 1_800,
     // Stop waiting for a frame that never finishes loading, so playback keeps running.
