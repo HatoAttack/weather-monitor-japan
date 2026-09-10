@@ -7,6 +7,7 @@ import { Timeline } from '../components/Timeline/Timeline';
 import { UpdateStatus } from '../components/UpdateStatus/UpdateStatus';
 import { useRainMonitor } from '../hooks/useRainMonitor';
 import { useAmedasMonitor } from '../hooks/useAmedasMonitor';
+import { useTimelinePlayer } from '../hooks/useTimelinePlayer';
 import { useSatelliteMonitor } from '../hooks/useSatelliteMonitor';
 import type { AmedasMetric, AmedasStation } from '../weather/domain/AmedasObservation';
 import type { WeatherFrame } from '../weather/domain/WeatherFrame';
@@ -33,11 +34,15 @@ export function App() {
   const [satelliteStatus, setSatelliteStatus] = useState<LayerStatus>({ phase: 'idle' });
   const onDisplay = useCallback((frame: WeatherFrame) => setDisplayed(frame), []);
   const onStation = useCallback((station: AmedasStation) => setSelectedStationId(station.id), []);
+  const player = useTimelinePlayer({
+    frames: monitor.frames, selectedId: monitor.selectedId, displayedId: displayed?.id ?? null,
+    enabled: visible, onSelect: monitor.select,
+  });
   const pending = monitor.selected && monitor.selected.id !== displayed?.id;
   const selectedStation = amedasMonitor.snapshot?.stations.find(station => station.id === selectedStationId) ?? null;
   return <main className="app">
     <header className="app-header">
-      <div className="brand"><span className="brand-mark" aria-hidden="true">☂</span><div><p>WEATHER MONITOR JAPAN <span>v0.3</span></p><h1>日本の気象観測</h1></div></div>
+      <div className="brand"><span className="brand-mark" aria-hidden="true">☂</span><div><p>WEATHER MONITOR JAPAN <span>v0.4</span></p><h1>日本の気象観測</h1></div></div>
       <span className="header-note">雨雲・アメダス・ひまわり</span>
     </header>
     <div className="workspace">
@@ -86,7 +91,9 @@ export function App() {
           {pending && isStale(displayed, monitor.now) && <p className="warning-text">表示中の画像は{config.staleAfterMs / 60_000}分以上前のデータです。</p>}
           {pending && <p className="pending-time">選択中 {formatTime(monitor.selected?.observedAt)}</p>}
           <label className="toggle"><input type="checkbox" checked={visible} onChange={event => setVisible(event.target.checked)} />降水レイヤーを表示</label>
-          <Timeline frames={monitor.frames} selectedId={monitor.selectedId} onSelect={monitor.select} />
+          <Timeline frames={monitor.frames} selectedId={monitor.selectedId} onSelect={player.select}
+            playing={player.playing} canPlay={player.canPlay} speedId={player.speedId} speeds={player.speeds}
+            onTogglePlay={player.toggle} onSpeed={player.setSpeed} />
           <UpdateStatus state={monitor} autoUpdate={monitor.autoUpdate} stale={isStale(monitor.frames.at(-1), monitor.now)} />
           <label className="toggle"><input type="checkbox" checked={monitor.autoUpdate} onChange={event => monitor.setAutoUpdate(event.target.checked)} />自動更新</label>
           <button className="refresh" disabled={monitor.phase === 'loading' || layerStatus.phase === 'loading'} onClick={() => { setRetry(value => value + 1); void monitor.refresh(); }}>雨雲を更新</button>
