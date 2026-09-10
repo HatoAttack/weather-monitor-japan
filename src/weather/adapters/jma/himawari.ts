@@ -25,7 +25,8 @@ export function normalizeHimawari(data: unknown, fetchedAt: string, now = Date.n
     const observedAt = parseTime(row.validtime);
     if (Date.parse(observedAt) > now) return [];
     return [{
-      id: `satellite-${String(row.validtime)}`, observedAt, fetchedAt, layerType: 'satellite' as const,
+      id: `satellite-${String(row.validtime)}`, observedAt, fetchedAt,
+      kind: 'observation' as const, layerType: 'satellite' as const,
       source: himawariSource.name,
       tileTemplate: `${root}/${String(row.basetime)}/fd/${String(row.validtime)}/B13/TBB/{z}/{x}/{y}.jpg`,
       minZoom: 3, maxZoom: 5, bounds: [80, -10, 180, 70] as [number, number, number, number],

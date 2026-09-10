@@ -3,6 +3,8 @@ import { baseTile, rainTile } from './fixtures/tiles';
 
 test('base map details can be switched off from the panel', async ({ page }) => {
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [] }));
+  // The nowcast is fetched alongside; these tests cover observations only.
+  await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
   await page.route('**/amedas/**', route => route.abort());
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({ contentType: 'image/png', body: baseTile }));

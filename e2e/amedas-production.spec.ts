@@ -7,6 +7,8 @@ test('built app loads its worker and renders selectable AMeDAS circles', async (
     if (request.url().includes('maplibre-gl-worker')) workerFailures.push(request.url());
   });
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [] }));
+  // The nowcast is fetched alongside; these tests cover observations only.
+  await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
   await page.route('**/amedas/data/latest_time.txt', route => route.fulfill({ body: '2026-09-10T01:00:00+09:00' }));
   await page.route('**/amedas/const/amedastable.json', route => route.fulfill({ json: {
     '99999': { lat: [36, 0], lon: [137, 0], alt: 10, kjName: '検証地点' },

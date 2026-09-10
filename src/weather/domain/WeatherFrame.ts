@@ -2,6 +2,10 @@ export type WeatherFrame = {
   id: string;
   observedAt: string;
   fetchedAt: string;
+  /** Observations report what happened; a forecast reports what is expected. */
+  kind: 'observation' | 'forecast';
+  /** Observation time a forecast was calculated from. */
+  issuedAt?: string;
   layerType: 'precipitation' | 'satellite';
   source: string;
   tileTemplate: string;
