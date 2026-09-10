@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react';
 import { config } from './config';
 import { AmedasControls } from '../components/AmedasControls/AmedasControls';
+import { MapControls } from '../components/MapControls/MapControls';
 import { PanelSection } from '../components/PanelSection/PanelSection';
 import { StationCard } from '../components/StationCard/StationCard';
 import { WeatherMap } from '../components/WeatherMap/WeatherMap';
 import type { LayerStatus } from '../components/WeatherMap/RainLayer';
+import type { BaseMapFeature } from '../components/WeatherMap/baseMap';
 import { Timeline } from '../components/Timeline/Timeline';
 import { UpdateStatus } from '../components/UpdateStatus/UpdateStatus';
 import { useRainMonitor } from '../hooks/useRainMonitor';
@@ -34,6 +36,9 @@ export function App() {
   const [satelliteRetry, setSatelliteRetry] = useState(0);
   const [satelliteDisplayed, setSatelliteDisplayed] = useState<WeatherFrame | null>(null);
   const [satelliteStatus, setSatelliteStatus] = useState<LayerStatus>({ phase: 'idle' });
+  const [mapFeatures, setMapFeatures] = useState<Record<BaseMapFeature, boolean>>({
+    elevation: true, contour: true, river: true, railway: true,
+  });
   const onDisplay = useCallback((frame: WeatherFrame) => setDisplayed(frame), []);
   const onStation = useCallback((station: AmedasStation) => setSelectedStationId(station.id), []);
   const player = useTimelinePlayer({
@@ -66,6 +71,7 @@ export function App() {
         satelliteRetry={satelliteRetry}
         onSatelliteDisplay={setSatelliteDisplayed}
         onSatelliteStatus={setSatelliteStatus}
+        baseMapFeatures={mapFeatures}
       />
       {selectedStation && amedasVisible
         && <StationCard station={selectedStation} onClose={() => setSelectedStationId(null)} />}
@@ -110,6 +116,10 @@ export function App() {
             {layerStatus.phase === 'error' && <><p className="warning-text">{layerStatus.message}</p><button onClick={() => setRetry(value => value + 1)}>画像を再試行</button></>}
           </div>
         </PanelSection>
+        <MapControls
+          shown={mapFeatures}
+          onChange={(feature, shown) => setMapFeatures(current => ({ ...current, [feature]: shown }))}
+        />
         <p className="source-note">出典：<a href={precipitationSource.url} target="_blank" rel="noreferrer">気象庁「雨雲の動き」</a>・<a href={amedasSource.url} target="_blank" rel="noreferrer">「アメダス」</a>・<a href={himawariSource.url} target="_blank" rel="noreferrer">「ひまわり」</a>を加工して表示</p>
       </aside>
       <p className="map-hint">ドラッグで移動 · ＋ / − で拡大縮小</p>

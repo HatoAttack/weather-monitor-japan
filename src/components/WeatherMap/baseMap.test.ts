@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
-import { baseMapStyle } from './baseMap';
+import { baseMapFeatureLayers, baseMapStyle } from './baseMap';
 
 describe('base map style', () => {
   it('is a valid MapLibre style', () => {
@@ -33,5 +33,12 @@ describe('base map style', () => {
     // 2901/2903/2904/7701 are the road number annotations.
     expect(JSON.stringify(labels.filter)).not.toMatch(/2901|2903|2904|7701/);
     expect(JSON.stringify(labels.filter)).toContain('110');
+  });
+
+  it('names style layers that exist for every switchable feature', () => {
+    const ids = baseMapStyle.layers.map(layer => layer.id);
+    for (const layers of Object.values(baseMapFeatureLayers)) {
+      for (const layer of layers) expect(ids).toContain(layer);
+    }
   });
 });
