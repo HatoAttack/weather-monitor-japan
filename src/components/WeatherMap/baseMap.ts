@@ -3,15 +3,17 @@ import type { StyleSpecification } from 'maplibre-gl';
 /**
  * Base map built to stay out of the way of the weather layers.
  *
- * GSI vector tiles carry each feature separately, so roads, road numbers,
- * railways, buildings and contour lines can be left out and only the coastline,
- * borders and place names drawn. They stop publishing land and coastline above
- * zoom 6, so from there the pale raster map fades in underneath, washed out
- * until little more than the land and sea tone survives.
+ * GSI vector tiles carry each feature separately, so roads, road numbers and
+ * buildings can be left out while the coastline, borders, railways, rivers,
+ * contour lines and place names are drawn. They stop publishing land and
+ * coastline above zoom 6, so from there the pale raster map fades in
+ * underneath, washed out until little more than the land and sea tone survives,
+ * with elevation colouring joining it once the map is on a single region.
  */
 const vectorTiles = 'https://cyberjapandata.gsi.go.jp/xyz/optimal_bvmap-v1/{z}/{x}/{y}.pbf';
 const rasterTiles = 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png';
 const shadeTiles = 'https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png';
+const elevationTiles = 'https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png';
 const gsi = (label: string) =>
   '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">' + label + '</a>';
 
@@ -29,6 +31,10 @@ export const baseMapStyle: StyleSpecification = {
     shade: {
       type: 'raster', tiles: [shadeTiles], tileSize: 256, minzoom: 2, maxzoom: 16,
       attribution: gsi('陰影起伏図'),
+    },
+    elevation: {
+      type: 'raster', tiles: [elevationTiles], tileSize: 256, minzoom: 5, maxzoom: 15,
+      attribution: gsi('色別標高図'),
     },
     detail: {
       type: 'vector', tiles: [vectorTiles], minzoom: 4, maxzoom: 16,
@@ -50,11 +56,44 @@ export const baseMapStyle: StyleSpecification = {
       },
     },
     {
+      // Elevation colouring also paints the sea floor, which would take over the
+      // nationwide view, so it only joins once the map is on a region.
+      id: 'elevation-colour', type: 'raster', source: 'elevation',
+      paint: {
+        'raster-opacity': ['interpolate', ['linear'], ['zoom'], 6.5, 0, 8, 0.45],
+        'raster-saturation': -0.15,
+      },
+    },
+    {
       // Relief shading carries no text or roads, so terrain can be read without clutter.
       id: 'relief', type: 'raster', source: 'shade',
       paint: { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.3, 8, 0.4, 12, 0.42] },
     },
     { id: 'water', type: 'fill', source: 'detail', 'source-layer': 'WA', paint: { 'fill-color': sea } },
+    {
+      // Contours only reach the tiles from zoom 10, and stay faint under everything else.
+      id: 'contour', type: 'line', source: 'detail', 'source-layer': 'Cntr', minzoom: 10,
+      paint: {
+        'line-color': '#b3a48c',
+        'line-width': 0.5,
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0.45, 13, 0.75],
+      },
+    },
+    {
+      id: 'river', type: 'line', source: 'detail', 'source-layer': 'RvrCL', minzoom: 10,
+      paint: {
+        'line-color': '#9dc2d4',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 14, 1.3],
+      },
+    },
+    {
+      id: 'railway', type: 'line', source: 'detail', 'source-layer': 'RailCL',
+      paint: {
+        'line-color': '#93a3ab',
+        'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.4, 10, 0.7, 13, 1.1],
+        'line-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0.5, 10, 0.8],
+      },
+    },
     {
       id: 'coastline', type: 'line', source: 'detail', 'source-layer': 'Cstline',
       filter: ['==', ['get', 'vt_code'], 5101],

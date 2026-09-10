@@ -7,11 +7,25 @@ describe('base map style', () => {
     expect(validateStyleMin(baseMapStyle).map(error => error.message)).toEqual([]);
   });
 
-  it('leaves out the source layers that carry roads, railways and buildings', () => {
+  it('leaves out the source layers that carry roads and buildings', () => {
     const used = baseMapStyle.layers.map(layer => 'source-layer' in layer ? layer['source-layer'] : null);
-    for (const noisy of ['RdCL', 'RailCL', 'BldA', 'Cntr', 'PwrTrnsmL']) expect(used).not.toContain(noisy);
-    expect(used).toContain('Cstline');
-    expect(used).toContain('AdmBdry');
+    for (const noisy of ['RdCL', 'BldA', 'PwrTrnsmL']) expect(used).not.toContain(noisy);
+    for (const wanted of ['Cstline', 'AdmBdry', 'RailCL', 'RvrCL', 'Cntr']) expect(used).toContain(wanted);
+  });
+
+  it('keeps elevation colouring off the nationwide view', () => {
+    const layer = baseMapStyle.layers.find(item => item.id === 'elevation-colour') as
+      { paint?: { 'raster-opacity'?: unknown } };
+    // The sea floor would otherwise compete with the precipitation layer.
+    expect(layer.paint!['raster-opacity']).toEqual(
+      ['interpolate', ['linear'], ['zoom'], 6.5, 0, 8, 0.45]);
+  });
+
+  it('waits for the zoom where contours and rivers are published', () => {
+    for (const id of ['contour', 'river']) {
+      const layer = baseMapStyle.layers.find(item => item.id === id) as { minzoom?: number };
+      expect(layer.minzoom).toBe(10);
+    }
   });
 
   it('only draws place names, never road numbers', () => {
