@@ -13,6 +13,14 @@ describe('base map style', () => {
     for (const wanted of ['Cstline', 'AdmBdry', 'RailCL', 'RvrCL', 'Cntr']) expect(used).toContain(wanted);
   });
 
+  it('uses no raster map that carries roads, road numbers or names', () => {
+    const tiles = Object.values(baseMapStyle.sources).flatMap(source => 'tiles' in source ? source.tiles ?? [] : []);
+    // GSI's standard and pale maps draw roads and their numbers into the image.
+    for (const noisy of ['/std/', '/pale/', '/english/']) expect(tiles.join(' ')).not.toContain(noisy);
+    const tone = baseMapStyle.layers.find(layer => layer.id === 'tone') as { source?: string };
+    expect(tone.source).toBe('elevation');
+  });
+
   it('keeps elevation colouring off the nationwide view', () => {
     const layer = baseMapStyle.layers.find(item => item.id === 'elevation-colour') as
       { paint?: { 'raster-opacity'?: unknown } };
