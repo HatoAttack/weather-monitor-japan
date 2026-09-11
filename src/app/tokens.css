@@ -1,0 +1,105 @@
+/*
+ * Design tokens after Apple's Human Interface Guidelines. docs/DESIGN.md explains
+ * each value and where it departs from HIG. Components read only these tokens,
+ * so appearance and accessibility settings are handled here by swapping them.
+ */
+:root{
+  color-scheme:light dark;
+
+  /* Apple devices get SF Pro and Hiragino; Windows gets Segoe UI and Yu Gothic UI. */
+  --font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Segoe UI","Yu Gothic UI","Meiryo UI",system-ui,sans-serif;
+  /* HIG text styles at the default size, with line heights opened up for Japanese. */
+  --text-title2:600 22px/30px var(--font-family);
+  --text-headline:600 17px/24px var(--font-family);
+  --text-body:400 17px/24px var(--font-family);
+  --text-subheadline:400 15px/21px var(--font-family);
+  --text-footnote:400 13px/19px var(--font-family);
+  --text-caption1:400 12px/17px var(--font-family);
+  --text-caption2:400 11px/15px var(--font-family);
+
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --radius-s:8px;
+  --radius-m:12px;
+  --radius-l:16px;
+  /* The smallest target HIG allows for anything the viewer clicks or taps. */
+  --hit-min:44px;
+  --duration-short:200ms;
+
+  --color-label:#1d1d1f;
+  --color-label-secondary:#636366;
+  --color-label-tertiary:#8e8e93;
+  --color-tint:#0058c4;
+  --color-tint-fill:#0071e3;
+  --color-on-tint:#fff;
+  --color-separator:rgba(60,60,67,.29);
+  --color-fill:rgba(120,120,128,.2);
+  --color-fill-secondary:rgba(120,120,128,.16);
+  --color-fill-tertiary:rgba(118,118,128,.12);
+  --color-bg:#f2f2f7;
+  --color-bg-elevated:#fff;
+  --color-green:#248a3d;
+  --color-orange:#b83000;
+  --color-purple:#8944ab;
+
+  --color-material:rgba(250,250,252,.9);
+  --color-material-edge:rgba(0,0,0,.08);
+  --material-filter:blur(24px) saturate(180%);
+  --shadow-floating:0 1px 2px rgba(0,0,0,.06),0 8px 28px rgba(0,0,0,.14);
+  --control-edge:0 0 0 0 transparent;
+  /* MapLibre draws its zoom icons dark, so they are inverted on a dark material. */
+  --map-icon-filter:none;
+}
+
+@media (prefers-color-scheme:dark){
+  :root{
+    --color-label:#f5f5f7;
+    --color-label-secondary:#a1a1a6;
+    --color-label-tertiary:#6e6e73;
+    --color-tint:#64b0ff;
+    --color-separator:rgba(84,84,88,.65);
+    --color-fill:rgba(120,120,128,.36);
+    --color-fill-secondary:rgba(120,120,128,.32);
+    --color-fill-tertiary:rgba(118,118,128,.24);
+    --color-bg:#000;
+    --color-bg-elevated:#1c1c1e;
+    --color-green:#30d158;
+    --color-orange:#ff9f0a;
+    --color-purple:#da8fff;
+    /* The base map stays light, so the dark material is thicker to keep text readable over it. */
+    --color-material:rgba(28,28,30,.92);
+    --color-material-edge:rgba(255,255,255,.1);
+    --shadow-floating:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.4);
+    --map-icon-filter:invert(1);
+  }
+}
+
+@media (prefers-contrast:more){
+  :root{
+    --color-label-secondary:#3a3a3c;
+    --color-separator:rgba(60,60,67,.6);
+    --color-material-edge:rgba(0,0,0,.45);
+    --control-edge:inset 0 0 0 1px currentColor;
+  }
+}
+@media (prefers-contrast:more) and (prefers-color-scheme:dark){
+  :root{
+    --color-label-secondary:#d1d1d6;
+    --color-separator:rgba(235,235,245,.45);
+    --color-material-edge:rgba(255,255,255,.45);
+  }
+}
+/* Increased contrast also takes the transparency away, as it does on Apple platforms. */
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more){
+  :root{
+    --color-material:var(--color-bg-elevated);
+    --material-filter:none;
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  :root{--duration-short:0ms}
+}
