@@ -25,6 +25,13 @@ vi.mock('./BaseMapFeatures', () => ({
     constructor() { mocks.features.push(this); }
   },
 }));
+vi.mock('./WarningLayer', () => ({
+  WarningLayer: class {
+    setSnapshot() {}
+    setVisible() {}
+    destroy() {}
+  },
+}));
 vi.mock('./RainLayer', () => ({
   RainLayer: class {
     setFrame = vi.fn();
@@ -60,6 +67,7 @@ it('reapplies the selected rain image when the map is recreated', () => {
     amedasVisible: true, onDisplay: vi.fn(), onStatus: vi.fn(), onStation: vi.fn(),
     satelliteVisible: false, satelliteRetry: 0, onSatelliteDisplay: vi.fn(), onSatelliteStatus: vi.fn(),
     baseMapFeatures: { elevation: true, contour: true, river: true, railway: true },
+    warningSnapshot: null, warningVisible: true, onWarningArea: vi.fn(),
   };
   const view = render(<WeatherMap {...props} />);
   act(() => mocks.loads[0]());
@@ -79,6 +87,7 @@ it('passes the chosen base map details to the map once it is loaded', () => {
     amedasVisible: true, onDisplay: vi.fn(), onStatus: vi.fn(), onStation: vi.fn(),
     satelliteVisible: false, satelliteRetry: 0, onSatelliteDisplay: vi.fn(), onSatelliteStatus: vi.fn(),
     baseMapFeatures: shown,
+    warningSnapshot: null, warningVisible: true, onWarningArea: vi.fn(),
   };
   const view = render(<WeatherMap {...props} />);
   act(() => mocks.loads[0]());

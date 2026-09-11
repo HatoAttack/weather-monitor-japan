@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { baseTile, emptyTile, rainTile } from './fixtures/tiles';
+import { stubWarnings } from './fixtures/warnings';
 const time = (minutesAgo: number) => new Date(Math.floor(Date.now() / 300_000) * 300_000 - minutesAgo * 60_000)
   .toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
 const row = (stamp: string) => ({ basetime: stamp, validtime: stamp, elements: ['hrpns'] });
@@ -25,6 +26,7 @@ test('controls, failed metadata and failed tiles preserve the displayed frame, t
   let rows = [row(times[0]), row(times[1])];
   // The nowcast is fetched alongside; these tests cover observations only.
   await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
+  await stubWarnings(page);
   await page.route('**/targetTimes_N1.json', route => metadataFails
     ? route.fulfill({ status: 503, body: 'unavailable' })
     : route.fulfill({ json: rows }));
@@ -82,6 +84,7 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
   await page.route('**/targetTimes_N1.json', route => route.fulfill(failed ? { status: 503 } : { json: [row(time(5)), row(time(0))] }));
   // The nowcast is fetched alongside; these tests cover observations only.
   await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
+  await stubWarnings(page);
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({ contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile }));
   await page.goto('/');
@@ -100,6 +103,7 @@ test('precipitation stays visible across zoom levels JMA leaves empty', async ({
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [row(time(5)), row(time(0))] }));
   // The nowcast is fetched alongside; these tests cover observations only.
   await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
+  await stubWarnings(page);
   const requested: number[] = [];
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => {
@@ -141,6 +145,7 @@ test('playback steps through frames, stops on the newest, repeats and yields to 
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: times.map(row) }));
   // The nowcast is fetched alongside; these tests cover observations only.
   await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
+  await stubWarnings(page);
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({
     contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile,

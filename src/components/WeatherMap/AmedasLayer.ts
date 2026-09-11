@@ -12,7 +12,8 @@ import { arrowHeight, windArrowImage } from './windArrow';
 
 const sourceId = 'amedas-observations';
 const circleId = 'amedas-circles';
-const hitCircleId = 'amedas-click-targets';
+// Other layers check this one so a click on a station is not also taken as theirs.
+export const hitCircleId = 'amedas-click-targets';
 const arrowId = 'amedas-wind-arrows';
 const arrowImageId = 'amedas-wind-arrow';
 

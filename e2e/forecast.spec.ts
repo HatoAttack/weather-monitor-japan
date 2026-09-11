@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { baseTile, rainTile } from './fixtures/tiles';
+import { stubWarnings } from './fixtures/warnings';
 
 const stamp = (minutesFromNow: number) =>
   new Date(Math.floor(Date.now() / 300_000) * 300_000 + minutesFromNow * 60_000)
@@ -12,6 +13,7 @@ test('the nowcast continues the timeline past the newest observation', async ({ 
   const ahead = [stamp(5), stamp(10), stamp(15)];
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: past.map(time => row(time)) }));
   await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: ahead.map(valid => row(now, valid)) }));
+  await stubWarnings(page);
   await page.route('**/amedas/**', route => route.abort());
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({
@@ -45,6 +47,7 @@ test('a failed nowcast leaves the observations usable', async ({ page }) => {
   const past = [stamp(-5), stamp(0)];
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: past.map(time => row(time)) }));
   await page.route('**/targetTimes_N2.json', route => route.fulfill({ status: 503, body: 'unavailable' }));
+  await stubWarnings(page);
   await page.route('**/amedas/**', route => route.abort());
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({

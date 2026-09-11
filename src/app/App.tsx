@@ -4,6 +4,8 @@ import { AmedasControls } from '../components/AmedasControls/AmedasControls';
 import { MapControls } from '../components/MapControls/MapControls';
 import { PanelSection } from '../components/PanelSection/PanelSection';
 import { StationCard } from '../components/StationCard/StationCard';
+import { WarningCard } from '../components/WarningCard/WarningCard';
+import { WarningControls } from '../components/WarningControls/WarningControls';
 import { WeatherMap } from '../components/WeatherMap/WeatherMap';
 import type { LayerStatus } from '../components/WeatherMap/RainLayer';
 import type { BaseMapFeature } from '../components/WeatherMap/baseMap';
@@ -13,18 +15,23 @@ import { useRainMonitor } from '../hooks/useRainMonitor';
 import { useAmedasMonitor } from '../hooks/useAmedasMonitor';
 import { useTimelinePlayer } from '../hooks/useTimelinePlayer';
 import { useSatelliteMonitor } from '../hooks/useSatelliteMonitor';
+import { useWarningMonitor } from '../hooks/useWarningMonitor';
 import type { AmedasMetric, AmedasStation } from '../weather/domain/AmedasObservation';
 import type { WeatherFrame } from '../weather/domain/WeatherFrame';
 import { isStale, latestObservation } from '../weather/services/monitor';
 import { precipitationSource } from '../weather/adapters/jma/precipitation';
 import { amedasSource } from '../weather/adapters/jma/amedas';
 import { himawariSource } from '../weather/adapters/jma/himawari';
+import { warningSource } from '../weather/adapters/jma/warning';
 import { formatTime } from '../utils/time';
 
 export function App() {
   const monitor = useRainMonitor();
   const amedasMonitor = useAmedasMonitor();
   const satelliteMonitor = useSatelliteMonitor();
+  const warningMonitor = useWarningMonitor();
+  const [warningVisible, setWarningVisible] = useState(true);
+  const [selectedAreaCode, setSelectedAreaCode] = useState<string | null>(null);
   const [visible, setVisible] = useState(true);
   const [amedasVisible, setAmedasVisible] = useState(true);
   const [satelliteVisible, setSatelliteVisible] = useState(false);
@@ -40,7 +47,13 @@ export function App() {
     elevation: true, contour: true, river: true, railway: true,
   });
   const onDisplay = useCallback((frame: WeatherFrame) => setDisplayed(frame), []);
-  const onStation = useCallback((station: AmedasStation) => setSelectedStationId(station.id), []);
+  // One card at a time: choosing a station or an area replaces the other.
+  const onStation = useCallback((station: AmedasStation) => {
+    setSelectedStationId(station.id); setSelectedAreaCode(null);
+  }, []);
+  const onWarningArea = useCallback((code: string) => {
+    setSelectedAreaCode(code); setSelectedStationId(null);
+  }, []);
   const player = useTimelinePlayer({
     frames: monitor.frames, selectedId: monitor.selectedId, displayedId: displayed?.id ?? null,
     enabled: visible, onSelect: monitor.select,
@@ -49,13 +62,16 @@ export function App() {
   const pending = !player.playing && monitor.selected && monitor.selected.id !== displayed?.id;
   const selectedStation = amedasMonitor.snapshot?.stations.find(station => station.id === selectedStationId) ?? null;
   const newestObservation = latestObservation(monitor.frames);
+  // Areas are chosen on the national map; municipalities once zoomed in.
+  const selectedArea = warningMonitor.snapshot?.areas.find(area => area.code === selectedAreaCode)
+    ?? warningMonitor.snapshot?.municipalities.find(place => place.code === selectedAreaCode) ?? null;
   const hasForecast = monitor.frames.some(frame => frame.kind === 'forecast');
   const satelliteStale = !!satelliteMonitor.selected
     && monitor.now - Date.parse(satelliteMonitor.selected.observedAt) > config.satelliteStaleAfterMs;
   return <main className="app">
     <header className="app-header">
-      <div className="brand"><span className="brand-mark" aria-hidden="true">☂</span><div><p>WEATHER MONITOR JAPAN <span>v0.5</span></p><h1>日本の気象観測</h1></div></div>
-      <span className="header-note">雨雲・アメダス・ひまわり</span>
+      <div className="brand"><span className="brand-mark" aria-hidden="true">☂</span><div><p>WEATHER MONITOR JAPAN <span>v0.6</span></p><h1>日本の気象観測</h1></div></div>
+      <span className="header-note">警報・雨雲・アメダス・ひまわり</span>
     </header>
     <div className="workspace">
       <WeatherMap
@@ -74,10 +90,23 @@ export function App() {
         onSatelliteDisplay={setSatelliteDisplayed}
         onSatelliteStatus={setSatelliteStatus}
         baseMapFeatures={mapFeatures}
+        warningSnapshot={warningMonitor.snapshot}
+        warningVisible={warningVisible}
+        onWarningArea={onWarningArea}
       />
       {selectedStation && amedasVisible
         && <StationCard station={selectedStation} onClose={() => setSelectedStationId(null)} />}
+      {selectedArea && warningVisible
+        && <WarningCard area={selectedArea} onClose={() => setSelectedAreaCode(null)} />}
       <aside className="panel" aria-label="表示と更新の操作">
+        <WarningControls
+          state={warningMonitor}
+          visible={warningVisible}
+          hasSelection={!!selectedArea && warningVisible}
+          now={monitor.now}
+          onVisible={setWarningVisible}
+          onRefresh={() => void warningMonitor.refresh()}
+        />
         <AmedasControls
           state={amedasMonitor}
           metric={amedasMetric}
@@ -127,7 +156,7 @@ export function App() {
           shown={mapFeatures}
           onChange={(feature, shown) => setMapFeatures(current => ({ ...current, [feature]: shown }))}
         />
-        <p className="source-note">出典：<a href={precipitationSource.url} target="_blank" rel="noreferrer">気象庁「雨雲の動き」</a>・<a href={amedasSource.url} target="_blank" rel="noreferrer">「アメダス」</a>・<a href={himawariSource.url} target="_blank" rel="noreferrer">「ひまわり」</a>を加工して表示</p>
+        <p className="source-note">出典：<a href={precipitationSource.url} target="_blank" rel="noreferrer">気象庁「雨雲の動き」</a>・<a href={amedasSource.url} target="_blank" rel="noreferrer">「アメダス」</a>・<a href={himawariSource.url} target="_blank" rel="noreferrer">「ひまわり」</a>・<a href={warningSource.url} target="_blank" rel="noreferrer">「警報・注意報」</a>を加工して表示</p>
       </aside>
       <p className="map-hint">ドラッグで移動 · ＋ / − で拡大縮小</p>
     </div>

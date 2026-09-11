@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { baseTile, rainTile } from './fixtures/tiles';
+import { stubWarnings } from './fixtures/warnings';
 
 test('native tab visibility suppresses polling and resumes both weather sources', async ({ baseURL }, testInfo) => {
   test.skip(process.env.REAL_TAB_VISIBILITY !== '1', 'Opt-in native Chrome tab test using an isolated profile.');
@@ -38,6 +39,7 @@ test('native tab visibility suppresses polling and resumes both weather sources'
     let latestTime = '2026-09-09T18:00:00+09:00';
     // The nowcast is fetched alongside; this test covers observations only.
     await context.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
+    await stubWarnings(context);
     await context.route('**/targetTimes_N1.json', route => {
       counts.rain++;
       return route.fulfill({ json: [{ basetime: stamp, validtime: stamp, elements: ['hrpns'] }] });
