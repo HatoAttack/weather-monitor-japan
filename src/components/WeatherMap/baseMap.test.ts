@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
-import { baseMapFeatureLayers, baseMapStyle } from './baseMap';
+import { baseMapFeatureLayers, baseMapStyle, weatherLayerBefore } from './baseMap';
 
 describe('base map style', () => {
   it('is a valid MapLibre style', () => {
@@ -39,6 +39,19 @@ describe('base map style', () => {
     const ids = baseMapStyle.layers.map(layer => layer.id);
     for (const layers of Object.values(baseMapFeatureLayers)) {
       for (const layer of layers) expect(ids).toContain(layer);
+    }
+  });
+
+  it('keeps relief, borders and names above where the weather layers go', () => {
+    const ids = baseMapStyle.layers.map(layer => layer.id);
+    const insertion = ids.indexOf(weatherLayerBefore);
+    expect(insertion).toBeGreaterThan(-1);
+    // Lakes must be painted before the rain, or they would punch holes in it.
+    for (const below of ['ocean', 'land', 'tone', 'elevation-colour', 'water']) {
+      expect(ids.indexOf(below)).toBeLessThan(insertion);
+    }
+    for (const above of ['relief', 'coastline', 'prefecture-border', 'place-label']) {
+      expect(ids.indexOf(above)).toBeGreaterThanOrEqual(insertion);
     }
   });
 });

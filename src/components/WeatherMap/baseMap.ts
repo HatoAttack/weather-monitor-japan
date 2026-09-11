@@ -64,12 +64,13 @@ export const baseMapStyle: StyleSpecification = {
         'raster-saturation': -0.15,
       },
     },
+    { id: 'water', type: 'fill', source: 'detail', 'source-layer': 'WA', paint: { 'fill-color': sea } },
     {
       // Relief shading carries no text or roads, so terrain can be read without clutter.
       id: 'relief', type: 'raster', source: 'shade',
-      paint: { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.3, 8, 0.4, 12, 0.42] },
+      // Drawn over the weather layers, so terrain reads through heavy rain.
+      paint: { 'raster-opacity': ['interpolate', ['linear'], ['zoom'], 4, 0.22, 8, 0.3, 12, 0.32] },
     },
-    { id: 'water', type: 'fill', source: 'detail', 'source-layer': 'WA', paint: { 'fill-color': sea } },
     {
       // Contours only reach the tiles from zoom 10, and stay faint under everything else.
       id: 'contour', type: 'line', source: 'detail', 'source-layer': 'Cntr', minzoom: 10,
@@ -133,3 +134,9 @@ export const baseMapFeatureLayers = {
 } as const;
 
 export type BaseMapFeature = keyof typeof baseMapFeatureLayers;
+
+/**
+ * Weather layers are inserted below this one, so relief, borders and place names
+ * stay readable even where precipitation covers the map.
+ */
+export const weatherLayerBefore = 'relief';

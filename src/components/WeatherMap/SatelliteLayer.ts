@@ -1,6 +1,7 @@
 import type { Map as LibreMap } from 'maplibre-gl';
 import { config } from '../../app/config';
 import type { WeatherFrame } from '../../weather/domain/WeatherFrame';
+import { weatherLayerBefore } from './baseMap';
 import type { LayerStatus } from './RainLayer';
 
 type Entry = { source: string; layer: string; frame: WeatherFrame };
@@ -75,7 +76,8 @@ export class SatelliteLayer {
     this.onStatus({ phase: 'loading' });
     try {
       this.map.addSource(entry.source, { type: 'raster', tiles: [frame.tileTemplate], tileSize: 256, minzoom: frame.minZoom, maxzoom: frame.maxZoom, bounds: frame.bounds, attribution: frame.attribution });
-      this.map.addLayer({ id: entry.layer, type: 'raster', source: entry.source, paint: { 'raster-opacity': this.visible ? 0.001 : 0, 'raster-opacity-transition': { duration: 0 }, 'raster-fade-duration': 0 } });
+      this.map.addLayer({ id: entry.layer, type: 'raster', source: entry.source, paint: { 'raster-opacity': this.visible ? 0.001 : 0, 'raster-opacity-transition': { duration: 0 }, 'raster-fade-duration': 0 } },
+        this.map.getLayer(weatherLayerBefore) ? weatherLayerBefore : undefined);
       if (this.visible) this.startTimer();
     } catch { this.fail(); }
   }
