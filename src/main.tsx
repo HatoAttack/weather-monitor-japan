@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { setWorkerUrl } from 'maplibre-gl';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import './app/tokens.css';
 import './app/styles.css';
 import { App } from './app/App';
 import { registerRainTileProtocol } from './weather/adapters/jma/rainTiles';
