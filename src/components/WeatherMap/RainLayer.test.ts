@@ -6,6 +6,7 @@ import { normalizeFrames } from '../../weather/adapters/jma/precipitation';
 
 function setup() {
   const listeners = new Map<string, Set<(event: unknown) => void>>();
+  const inserted: [string, string | undefined][] = [];
   const sources = new Map<string, boolean>();
   const layers = new Map<string, { opacity: number }>();
   const map = {
@@ -18,7 +19,10 @@ function setup() {
     getSource: (id: string) => sources.has(id),
     isSourceLoaded: (id: string) => sources.get(id),
     removeSource: (id: string) => sources.delete(id),
-    addLayer: ({ id }: { id: string }) => layers.set(id, { opacity: 0 }),
+    addLayer: ({ id }: { id: string }, before?: string) => {
+      inserted.push([id, before]);
+      layers.set(id, { opacity: 0 });
+    },
     getLayer: (id: string) => layers.get(id),
     removeLayer: (id: string) => layers.delete(id),
     setPaintProperty: (id: string, _name: string, opacity: number) => { layers.get(id)!.opacity = opacity; },
@@ -31,7 +35,7 @@ function setup() {
     { basetime: '20260909000000', validtime: '20260909000000', elements: ['hrpns'] },
     { basetime: '20260909000500', validtime: '20260909000500', elements: ['hrpns'] },
   ], '2026-09-09T00:10:00Z', Date.parse('2026-09-09T00:10:00Z'));
-  return { rain, emit, sources, layers, display, status, frames };
+  return { rain, emit, sources, layers, display, status, frames, inserted };
 }
 
 afterEach(() => vi.useRealTimers());
@@ -85,5 +89,16 @@ describe('rain image loading', () => {
     rain.setVisible(true);
     expect(layers.get('rain-2-layer')?.opacity).toBe(0.75);
     rain.destroy();
+  });
+
+  it('places the rain below the layer that keeps relief and labels readable', () => {
+    const { rain, frames, inserted, layers } = setup();
+    // The stub has no base map, so the insertion point is skipped rather than guessed.
+    rain.setFrame(frames[0]);
+    expect(inserted.at(-1)).toEqual([expect.stringContaining('rain-'), undefined]);
+
+    layers.set('relief', { opacity: 1 });
+    rain.setFrame(frames[1]);
+    expect(inserted.at(-1)).toEqual([expect.stringContaining('rain-'), 'relief']);
   });
 });

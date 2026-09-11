@@ -1,6 +1,7 @@
 import type { Map as LibreMap } from 'maplibre-gl';
 import { config } from '../../app/config';
 import type { WeatherFrame } from '../../weather/domain/WeatherFrame';
+import { weatherLayerBefore } from './baseMap';
 
 export type LayerStatus = { phase: 'idle' | 'loading' | 'ready' | 'error'; message?: string };
 type LayerEntry = { source: string; layer: string; frame: WeatherFrame };
@@ -107,7 +108,8 @@ export class RainLayer {
       this.map.addLayer({
         id: entry.layer, type: 'raster', source: entry.source,
         paint: { 'raster-opacity': 0, 'raster-opacity-transition': { duration: 0 }, 'raster-fade-duration': 0 },
-      });
+        // Below the relief and the labels, so the map stays readable under rain.
+      }, this.map.getLayer(weatherLayerBefore) ? weatherLayerBefore : undefined);
     } catch { fail(); }
   }
 
