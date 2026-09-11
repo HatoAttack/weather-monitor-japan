@@ -9,6 +9,14 @@ export const config = {
   tileTimeoutMs,
   staleAfterMs: 15 * 60_000,
   amedasStaleAfterMs: 30 * 60_000,
+  warningPollIntervalMs: 5 * 60_000,
+  // Reports arrive irregularly, so staleness is judged by the last successful check.
+  warningStaleAfterMs: 20 * 60_000,
+  // From this zoom, warnings are drawn per municipality instead of per area.
+  warningMunicipalZoom: 9,
+  warningShapeConcurrency: 6,
+  // Municipality shapes are requested once the map has stopped moving for this long.
+  warningShapeSettleMs: 400,
   clockIntervalMs: 30_000,
   historyLimit: 13,
   map: { center: [137, 36] as [number, number], zoom: 4.5, minZoom: 3, maxZoom: 12 },

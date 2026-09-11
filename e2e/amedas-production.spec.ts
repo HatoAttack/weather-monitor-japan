@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { baseTile } from './fixtures/tiles';
+import { stubWarnings } from './fixtures/warnings';
 
 test('built app loads its worker and renders selectable AMeDAS circles', async ({ page }) => {
   const workerFailures: string[] = [];
@@ -9,6 +10,7 @@ test('built app loads its worker and renders selectable AMeDAS circles', async (
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [] }));
   // The nowcast is fetched alongside; these tests cover observations only.
   await page.route('**/targetTimes_N2.json', route => route.fulfill({ json: [] }));
+  await stubWarnings(page);
   await page.route('**/amedas/data/latest_time.txt', route => route.fulfill({ body: '2026-09-10T01:00:00+09:00' }));
   await page.route('**/amedas/const/amedastable.json', route => route.fulfill({ json: {
     '99999': { lat: [36, 0], lon: [137, 0], alt: 10, kjName: '検証地点' },
