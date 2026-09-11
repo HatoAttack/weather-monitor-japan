@@ -6,12 +6,14 @@ import type { StyleSpecification } from 'maplibre-gl';
  * GSI vector tiles carry each feature separately, so roads, road numbers and
  * buildings can be left out while the coastline, borders, railways, rivers,
  * contour lines and place names are drawn. They stop publishing land and
- * coastline above zoom 6, so from there the pale raster map fades in
- * underneath, washed out until little more than the land and sea tone survives,
- * with elevation colouring joining it once the map is on a single region.
+ * coastline above zoom 7, and publish the sea as water areas instead. From there
+ * the elevation map fades in underneath, washed out until little more than a
+ * land tone survives, and the sea is painted over it. Unlike GSI's pale map it
+ * carries no roads, road numbers or names, and it still covers the open sea
+ * where the vector tiles are missing. Stronger elevation colouring joins it once
+ * the map is on a single region.
  */
 const vectorTiles = 'https://cyberjapandata.gsi.go.jp/xyz/optimal_bvmap-v1/{z}/{x}/{y}.pbf';
-const rasterTiles = 'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png';
 const shadeTiles = 'https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png';
 const elevationTiles = 'https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png';
 const gsi = (label: string) =>
@@ -24,10 +26,6 @@ export const baseMapStyle: StyleSpecification = {
   version: 8,
   glyphs: 'https://gsi-cyberjapan.github.io/optimal_bvmap/glyphs/{fontstack}/{range}.pbf',
   sources: {
-    basemap: {
-      type: 'raster', tiles: [rasterTiles], tileSize: 256, minzoom: 2, maxzoom: 18,
-      attribution: gsi('地理院タイル'),
-    },
     shade: {
       type: 'raster', tiles: [shadeTiles], tileSize: 256, minzoom: 2, maxzoom: 16,
       attribution: gsi('陰影起伏図'),
@@ -43,16 +41,17 @@ export const baseMapStyle: StyleSpecification = {
   },
   layers: [
     { id: 'ocean', type: 'background', paint: { 'background-color': sea } },
-    // Administrative areas stand in for a land fill, and reach up to zoom 6.
+    // Administrative areas stand in for a land fill, and reach up to zoom 7.
     { id: 'land', type: 'fill', source: 'detail', 'source-layer': 'AdmArea', paint: { 'fill-color': land } },
     {
-      id: 'tone', type: 'raster', source: 'basemap',
+      id: 'tone', type: 'raster', source: 'elevation',
       paint: {
-        // Fades in exactly where the vector tiles stop carrying land and coastline.
-        'raster-opacity': ['interpolate', ['linear'], ['zoom'], 6, 0, 7.5, 1],
-        'raster-saturation': 0.2,
-        'raster-contrast': -0.15,
-        'raster-brightness-min': 0.45,
+        // Fades in exactly where the vector tiles stop carrying land and start
+        // carrying the sea, so the washed-out sea floor stays off the wider views.
+        'raster-opacity': ['interpolate', ['linear'], ['zoom'], 7.5, 0, 8, 1],
+        'raster-saturation': -0.85,
+        'raster-contrast': -0.3,
+        'raster-brightness-min': 0.78,
       },
     },
     {
