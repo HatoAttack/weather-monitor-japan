@@ -31,6 +31,7 @@ export function App() {
   const satelliteMonitor = useSatelliteMonitor();
   const warningMonitor = useWarningMonitor();
   const [warningVisible, setWarningVisible] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedAreaCode, setSelectedAreaCode] = useState<string | null>(null);
   const [visible, setVisible] = useState(true);
   const [amedasVisible, setAmedasVisible] = useState(true);
@@ -69,10 +70,6 @@ export function App() {
   const satelliteStale = !!satelliteMonitor.selected
     && monitor.now - Date.parse(satelliteMonitor.selected.observedAt) > config.satelliteStaleAfterMs;
   return <main className="app">
-    <header className="app-header">
-      <div className="brand"><span className="brand-mark" aria-hidden="true">☂</span><div><p>WEATHER MONITOR JAPAN <span>v0.6</span></p><h1>日本の気象観測</h1></div></div>
-      <span className="header-note">警報・雨雲・アメダス・ひまわり</span>
-    </header>
     <div className="workspace">
       <WeatherMap
         frame={monitor.selected}
@@ -98,65 +95,79 @@ export function App() {
         && <StationCard station={selectedStation} onClose={() => setSelectedStationId(null)} />}
       {selectedArea && warningVisible
         && <WarningCard area={selectedArea} onClose={() => setSelectedAreaCode(null)} />}
-      <aside className="panel" aria-label="表示と更新の操作">
-        <WarningControls
-          state={warningMonitor}
-          visible={warningVisible}
-          hasSelection={!!selectedArea && warningVisible}
-          now={monitor.now}
-          onVisible={setWarningVisible}
-          onRefresh={() => void warningMonitor.refresh()}
-        />
-        <AmedasControls
-          state={amedasMonitor}
-          metric={amedasMetric}
-          visible={amedasVisible}
-          hasSelection={!!selectedStation && amedasVisible}
-          now={monitor.now}
-          onMetric={setAmedasMetric}
-          onVisible={setAmedasVisible}
-          onRefresh={() => void amedasMonitor.refresh()}
-        />
-        <PanelSection
-          id="section-satellite" className="satellite-controls" title="ひまわり" subtitle="赤外画像"
-          status={<><span className={'status-dot ' + (satelliteMonitor.error || satelliteStale ? 'warning' : '')} />
-            <span data-testid="satellite-time">{satelliteVisible && satelliteDisplayed ? formatTime(satelliteDisplayed.observedAt) : '未表示'}</span></>}
-        >
-          <label className="toggle"><input type="checkbox" checked={satelliteVisible} onChange={event => setSatelliteVisible(event.target.checked)} />衛星画像を表示</label>
-          <UpdateStatus state={satelliteMonitor} autoUpdate={true} stale={satelliteStale} intervalMs={config.satellitePollIntervalMs} staleAfterMs={config.satelliteStaleAfterMs} />
-          <button className="subtle-button" disabled={satelliteMonitor.phase === 'loading' || satelliteStatus.phase === 'loading'} onClick={() => { setSatelliteRetry(value => value + 1); void satelliteMonitor.refresh(); }}>衛星画像を更新</button>
-          <div className="layer-status" role="status">{satelliteStatus.phase === 'loading' && '衛星画像を読み込み中…'}{satelliteStatus.phase === 'error' && <p className="warning-text">{satelliteStatus.message}</p>}</div>
-        </PanelSection>
-        <PanelSection
-          id="section-rain" className="rain-controls" title="雨雲" subtitle="降水実況" defaultOpen
-          status={<><span className={'status-dot ' + (monitor.error || isStale(newestObservation, monitor.now) ? 'warning' : '')} />
-            <span data-testid="displayed-time">{visible && displayed ? formatTime(displayed.observedAt) : '未表示'}</span>
-            {visible && displayed?.kind === 'forecast' && <span className="muted">予測</span>}</>}
-        >
-          <p className="display-note">{visible ? '地図に表示中のデータ時刻（日本時間）' : '降水レイヤーは非表示'}</p>
-          {visible && displayed?.kind === 'forecast'
-            && <p className="forecast-note">予測 <time>{formatTime(displayed.issuedAt)}</time>時点の1時間先までの見通し</p>}
-          {pending && isStale(displayed, monitor.now) && <p className="warning-text">表示中の画像は{config.staleAfterMs / 60_000}分以上前のデータです。</p>}
-          {pending && <p className="pending-time">選択中 {formatTime(monitor.selected?.observedAt)}</p>}
-          <label className="toggle"><input type="checkbox" checked={visible} onChange={event => setVisible(event.target.checked)} />降水レイヤーを表示</label>
-          <Timeline frames={monitor.frames} selectedId={monitor.selectedId} onSelect={player.select}
-            playing={player.playing} canPlay={player.canPlay} speedId={player.speedId} speeds={player.speeds}
-            loop={player.loop} onTogglePlay={player.toggle} onSpeed={player.setSpeed} onLoop={player.setLoop} />
-          <UpdateStatus state={monitor} autoUpdate={monitor.autoUpdate} stale={isStale(newestObservation, monitor.now)} />
-          {!hasForecast && monitor.frames.length > 0
-            && <p className="warning-text">降水予測を取得できていません。実況のみ表示しています。</p>}
-          <label className="toggle"><input type="checkbox" checked={monitor.autoUpdate} onChange={event => monitor.setAutoUpdate(event.target.checked)} />自動更新</label>
-          <button className="refresh" disabled={monitor.phase === 'loading' || layerStatus.phase === 'loading'} onClick={() => { setRetry(value => value + 1); void monitor.refresh(); }}>雨雲を更新</button>
-          <div className="layer-status" role="status">
-            {!player.playing && layerStatus.phase === 'loading' && '降水画像を読み込み中…'}
-            {layerStatus.phase === 'error' && <><p className="warning-text">{layerStatus.message}</p><button onClick={() => setRetry(value => value + 1)}>画像を再試行</button></>}
+      <aside className={'panel' + (sheetOpen ? ' panel-open' : '')} aria-label="表示と更新の操作">
+        <div className="panel-header">
+          {/* On a narrow screen the panel is a bottom sheet; this opens and closes it.
+              A button rather than a drag gesture, so it works with a keyboard too. */}
+          <button
+            className="sheet-handle" id="panel-handle" aria-expanded={sheetOpen} aria-controls="panel-body"
+            onClick={() => setSheetOpen(open => !open)}
+          ><span className="sheet-grip" aria-hidden="true" />{sheetOpen ? '操作を閉じる' : '表示と更新の操作'}</button>
+          <div className="brand">
+            <span className="brand-mark" aria-hidden="true">☂</span>
+            <div><p>WEATHER MONITOR JAPAN <span>v0.7</span></p><h1>日本の気象観測</h1></div>
           </div>
-        </PanelSection>
-        <MapControls
-          shown={mapFeatures}
-          onChange={(feature, shown) => setMapFeatures(current => ({ ...current, [feature]: shown }))}
-        />
-        <p className="source-note">出典：<a href={precipitationSource.url} target="_blank" rel="noreferrer">気象庁「雨雲の動き」</a>・<a href={amedasSource.url} target="_blank" rel="noreferrer">「アメダス」</a>・<a href={himawariSource.url} target="_blank" rel="noreferrer">「ひまわり」</a>・<a href={warningSource.url} target="_blank" rel="noreferrer">「警報・注意報」</a>を加工して表示</p>
+        </div>
+        <div className="panel-body" id="panel-body">
+          <WarningControls
+            state={warningMonitor}
+            visible={warningVisible}
+            hasSelection={!!selectedArea && warningVisible}
+            now={monitor.now}
+            onVisible={setWarningVisible}
+            onRefresh={() => void warningMonitor.refresh()}
+          />
+          <AmedasControls
+            state={amedasMonitor}
+            metric={amedasMetric}
+            visible={amedasVisible}
+            hasSelection={!!selectedStation && amedasVisible}
+            now={monitor.now}
+            onMetric={setAmedasMetric}
+            onVisible={setAmedasVisible}
+            onRefresh={() => void amedasMonitor.refresh()}
+          />
+          <PanelSection
+            id="section-satellite" className="satellite-controls" title="ひまわり" subtitle="赤外画像"
+            status={<><span className={'status-dot ' + (satelliteMonitor.error || satelliteStale ? 'warning' : '')} />
+              <span data-testid="satellite-time">{satelliteVisible && satelliteDisplayed ? formatTime(satelliteDisplayed.observedAt) : '未表示'}</span></>}
+          >
+            <label className="toggle"><input type="checkbox" checked={satelliteVisible} onChange={event => setSatelliteVisible(event.target.checked)} />衛星画像を表示</label>
+            <UpdateStatus state={satelliteMonitor} autoUpdate={true} stale={satelliteStale} intervalMs={config.satellitePollIntervalMs} staleAfterMs={config.satelliteStaleAfterMs} />
+            <button className="subtle-button" disabled={satelliteMonitor.phase === 'loading' || satelliteStatus.phase === 'loading'} onClick={() => { setSatelliteRetry(value => value + 1); void satelliteMonitor.refresh(); }}>衛星画像を更新</button>
+            <div className="layer-status" role="status">{satelliteStatus.phase === 'loading' && '衛星画像を読み込み中…'}{satelliteStatus.phase === 'error' && <p className="warning-text">{satelliteStatus.message}</p>}</div>
+          </PanelSection>
+          <PanelSection
+            id="section-rain" className="rain-controls" title="雨雲" subtitle="降水実況" defaultOpen
+            status={<><span className={'status-dot ' + (monitor.error || isStale(newestObservation, monitor.now) ? 'warning' : '')} />
+              <span data-testid="displayed-time">{visible && displayed ? formatTime(displayed.observedAt) : '未表示'}</span>
+              {visible && displayed?.kind === 'forecast' && <span className="muted">予測</span>}</>}
+          >
+            <p className="display-note">{visible ? '地図に表示中のデータ時刻（日本時間）' : '降水レイヤーは非表示'}</p>
+            {visible && displayed?.kind === 'forecast'
+              && <p className="forecast-note">予測 <time>{formatTime(displayed.issuedAt)}</time>時点の1時間先までの見通し</p>}
+            {pending && isStale(displayed, monitor.now) && <p className="warning-text">表示中の画像は{config.staleAfterMs / 60_000}分以上前のデータです。</p>}
+            {pending && <p className="pending-time">選択中 {formatTime(monitor.selected?.observedAt)}</p>}
+            <label className="toggle"><input type="checkbox" checked={visible} onChange={event => setVisible(event.target.checked)} />降水レイヤーを表示</label>
+            <Timeline frames={monitor.frames} selectedId={monitor.selectedId} onSelect={player.select}
+              playing={player.playing} canPlay={player.canPlay} speedId={player.speedId} speeds={player.speeds}
+              loop={player.loop} onTogglePlay={player.toggle} onSpeed={player.setSpeed} onLoop={player.setLoop} />
+            <UpdateStatus state={monitor} autoUpdate={monitor.autoUpdate} stale={isStale(newestObservation, monitor.now)} />
+            {!hasForecast && monitor.frames.length > 0
+              && <p className="warning-text">降水予測を取得できていません。実況のみ表示しています。</p>}
+            <label className="toggle"><input type="checkbox" checked={monitor.autoUpdate} onChange={event => monitor.setAutoUpdate(event.target.checked)} />自動更新</label>
+            <button className="refresh" disabled={monitor.phase === 'loading' || layerStatus.phase === 'loading'} onClick={() => { setRetry(value => value + 1); void monitor.refresh(); }}>雨雲を更新</button>
+            <div className="layer-status" role="status">
+              {!player.playing && layerStatus.phase === 'loading' && '降水画像を読み込み中…'}
+              {layerStatus.phase === 'error' && <><p className="warning-text">{layerStatus.message}</p><button onClick={() => setRetry(value => value + 1)}>画像を再試行</button></>}
+            </div>
+          </PanelSection>
+          <MapControls
+            shown={mapFeatures}
+            onChange={(feature, shown) => setMapFeatures(current => ({ ...current, [feature]: shown }))}
+          />
+          <p className="source-note">出典：<a href={precipitationSource.url} target="_blank" rel="noreferrer">気象庁「雨雲の動き」</a>・<a href={amedasSource.url} target="_blank" rel="noreferrer">「アメダス」</a>・<a href={himawariSource.url} target="_blank" rel="noreferrer">「ひまわり」</a>・<a href={warningSource.url} target="_blank" rel="noreferrer">「警報・注意報」</a>を加工して表示</p>
+        </div>
       </aside>
       <p className="map-hint">ドラッグで移動 · ＋ / − で拡大縮小</p>
     </div>

@@ -88,6 +88,8 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
   await page.route('**/*.pbf', route => route.fulfill({ contentType: 'application/x-protobuf', body: '' }));
   await page.route('**/*.png', route => route.fulfill({ contentType: 'image/png', body: route.request().url().includes('/hrpns/') ? rainTile : baseTile }));
   await page.goto('/');
+  // The narrow layout is a bottom sheet; the controls under test are inside it.
+  await page.getByRole('button', { name: '表示と更新の操作' }).click();
   await expect(page.getByText('一時的な取得失敗', { exact: true })).toBeVisible();
   await expect(page.getByTestId('displayed-time')).toHaveText('未表示');
   failed = false;

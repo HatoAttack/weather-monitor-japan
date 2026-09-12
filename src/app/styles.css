@@ -23,19 +23,23 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 /* Everything floating over the map shares one material. */
 .panel,.station-card,.map-hint,.map-error,.maplibregl-ctrl-group,.maplibregl-ctrl.maplibregl-ctrl-attrib{background:var(--color-material);-webkit-backdrop-filter:var(--material-filter);backdrop-filter:var(--material-filter)}
 
-.app{--header-height:64px;min-height:100dvh;display:flex;flex-direction:column}
-.app-header{height:var(--header-height);padding:0 var(--space-5);display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);background:var(--color-bg-elevated);border-bottom:1px solid var(--color-separator)}
+/* No header: the map fills the window and everything else floats over it. */
+.app{height:100dvh;display:flex;flex-direction:column}
+/* The base map's sea, shown until the tiles arrive. */
+.workspace{position:relative;flex:1;min-height:0;background:#d9e8ee}
+.map-region,.map{position:absolute;inset:0}
+
 .brand{display:flex;align-items:center;gap:var(--space-3)}
 .brand-mark{font-size:28px;line-height:1;color:var(--color-tint)}
 .brand p{margin:0;font:var(--text-caption2);letter-spacing:.08em;color:var(--color-label-secondary)}
 .brand p span{letter-spacing:0;margin-left:var(--space-2)}
 .brand h1{margin:0;font:var(--text-title2)}
-.header-note{font:var(--text-footnote);color:var(--color-label-secondary)}
 
-/* The base map's sea, shown until the tiles arrive. */
-.workspace{position:relative;flex:1;min-height:670px;background:#d9e8ee}
-.map-region,.map{position:absolute;inset:0}
-.panel{--panel-margin:var(--space-5);position:relative;z-index:2;width:370px;max-height:calc(100dvh - var(--header-height) - 2 * var(--panel-margin));overflow-y:auto;margin:var(--panel-margin);padding:var(--space-1) var(--space-5) var(--space-4);border:1px solid var(--color-material-edge);border-radius:var(--radius-l);box-shadow:var(--shadow-floating)}
+/* Desktop: a sidebar floating on the map. Narrow screens turn it into a bottom sheet below. */
+.panel{--panel-margin:var(--space-5);position:absolute;z-index:2;left:0;top:0;width:370px;max-height:calc(100% - 2 * var(--panel-margin));overflow-y:auto;margin:var(--panel-margin);padding:0 var(--space-5) var(--space-4);border:1px solid var(--color-material-edge);border-radius:var(--radius-l);box-shadow:var(--shadow-floating)}
+.panel-header{padding:var(--space-4) 0 var(--space-3)}
+/* The sheet handle only exists on a narrow screen. */
+.sheet-handle{display:none}
 
 .panel-section{border-top:1px solid var(--color-separator)}
 .panel-section:first-of-type{border-top:0}
@@ -121,7 +125,7 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 .station-card dd{margin:0;font:var(--text-body);font-weight:600;font-variant-numeric:tabular-nums}
 .warning-card{max-height:calc(100% - var(--card-top) - var(--space-4));overflow-y:auto}
 
-.map-hint{position:absolute;right:var(--space-4);bottom:36px;padding:6px var(--space-3);border-radius:999px;font:var(--text-caption1);color:var(--color-label-secondary);pointer-events:none}
+.map-hint{position:absolute;z-index:2;right:var(--space-4);bottom:36px;padding:6px var(--space-3);border-radius:999px;font:var(--text-caption1);color:var(--color-label-secondary);pointer-events:none}
 .map-error{position:absolute;z-index:3;right:calc(2 * var(--space-4) + var(--hit-min));top:var(--space-4);max-width:320px;margin:0;padding:var(--space-3);border-radius:var(--radius-m);font:var(--text-footnote);color:var(--color-orange);box-shadow:var(--shadow-floating)}
 
 /* MapLibre's own controls, brought in line with the rest of the interface. */
@@ -138,17 +142,20 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 .maplibregl-ctrl.maplibregl-ctrl-attrib{padding:2px var(--space-2);border-top-left-radius:var(--radius-s);color:var(--color-label-secondary)}
 .maplibregl-ctrl-attrib a{color:inherit}
 
-@media(min-width:1600px){.panel{--panel-margin:var(--space-6);width:385px}.workspace{min-height:720px}}
+@media(min-width:1600px){.panel{--panel-margin:var(--space-6);width:385px}}
+/* Narrow screens: the panel becomes a bottom sheet with two detents. */
 @media(max-width:700px){
-  .app{--header-height:56px}
-  .app-header{padding:0 var(--space-4)}
+  .panel{--sheet-collapsed:var(--hit-min);left:0;right:0;top:auto;bottom:0;width:auto;max-height:86dvh;margin:0;padding:0 var(--space-4) var(--space-4);border-width:1px 0 0;border-radius:var(--radius-l) var(--radius-l) 0 0}
+  .panel:not(.panel-open){overflow:hidden;padding-bottom:0}
+  .panel:not(.panel-open) .panel-body,.panel:not(.panel-open) .brand{display:none}
+  .panel-header{padding:0}
   .brand h1{font:var(--text-headline)}
   .brand-mark{font-size:24px}
-  .header-note{display:none}
-  .workspace{display:flex;flex-direction:column;min-height:0}
-  .map-region{position:relative;height:52dvh;min-height:320px}
-  /* Below the map rather than over it, so the panel needs no material. */
-  .panel{width:auto;max-height:none;overflow:visible;margin:0;padding:var(--space-1) var(--space-5) var(--space-5);border:0;border-radius:0;box-shadow:none;background:var(--color-bg-elevated);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .sheet-handle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;padding:0;background:none;font:var(--text-subheadline);font-weight:600}
+  .sheet-handle:hover:enabled{background:none}
+  .sheet-grip{width:36px;height:5px;border-radius:999px;background:var(--color-label-tertiary)}
+  /* Keep the map's own controls and its attribution clear of the collapsed sheet. */
+  .maplibregl-ctrl-bottom-left,.maplibregl-ctrl-bottom-right{bottom:var(--hit-min)}
   .map-hint{display:none}
   .map-error{max-width:calc(100% - 80px)}
   .station-card{--card-top:var(--space-3);right:auto;left:var(--space-3);width:220px;padding:var(--space-3)}

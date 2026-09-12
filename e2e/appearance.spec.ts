@@ -19,6 +19,9 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 844 
     await stubData(page);
     await page.goto('/');
     await expect(page.getByRole('button', { name: 'Zoom in' })).toBeVisible();
+    // A narrow screen starts with the bottom sheet closed; its controls are measured open.
+    const handle = page.getByRole('button', { name: '表示と更新の操作' });
+    if (await handle.isVisible()) await handle.click();
     const closed = page.locator('details:not([open]) > summary');
     while (await closed.count()) await closed.first().click();
     const undersized = await page.evaluate(() => [...document.querySelectorAll('button, select, summary, input')]
