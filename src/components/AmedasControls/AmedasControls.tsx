@@ -3,6 +3,7 @@ import type { AmedasMetric, AmedasSnapshot } from '../../weather/domain/AmedasOb
 import type { AmedasMonitorState } from '../../weather/services/amedasMonitor';
 import { isAmedasStale } from '../../weather/services/amedasMonitor';
 import { PanelSection } from '../PanelSection/PanelSection';
+import { InfoHint } from '../InfoHint/InfoHint';
 import { formatTime } from '../../utils/time';
 
 const phaseLabels = {
@@ -30,7 +31,6 @@ type Props = {
   state: AmedasMonitorState;
   metric: AmedasMetric;
   visible: boolean;
-  hasSelection: boolean;
   now: number;
   onMetric: (metric: AmedasMetric) => void;
   onVisible: (visible: boolean) => void;
@@ -38,25 +38,31 @@ type Props = {
 };
 
 export function AmedasControls({
-  state, metric, visible, hasSelection, now, onMetric, onVisible, onRefresh,
+  state, metric, visible, now, onMetric, onVisible, onRefresh,
 }: Props) {
   const snapshot = state.snapshot as AmedasSnapshot | null;
   const stale = isAmedasStale(snapshot, now);
   return <PanelSection
     id="section-amedas" className="amedas-controls" title="アメダス"
     subtitle={snapshot ? `${snapshot.stations.length.toLocaleString('ja-JP')}地点` : '観測地点'}
+    toggle={{ label: '観測値を地図に表示', checked: visible, onChange: onVisible }}
     status={<><span className={'status-dot ' + (state.error || stale ? 'warning' : '')} /><time>{formatTime(snapshot?.observedAt)}</time></>}
   >
-    <label className="toggle"><input type="checkbox" checked={visible} onChange={event => onVisible(event.target.checked)} />観測値を地図に表示</label>
-    <fieldset className="metric-picker" disabled={!snapshot || !visible}>
-      <legend>地図に表示する観測値</legend>
+    <div className="control-row">
+      <p className="row-label">地図に表示する観測値</p>
+      <InfoHint label="観測値の表示についての説明">
+        <p>
+          {metric === 'temperature' && '寒色から暖色へ、気温の低い地点から高い地点を示します。'}
+          {metric === 'precipitation' && '青から紫へ、直近1時間の降水量が多い地点を示します。'}
+          {metric === 'wind' && '矢印は風が吹いていく向き、長さは風速を示します。色も風速です。矢印が重なる地点は、拡大すると表示されます。'}
+        </p>
+        <p>地図上の観測地点を選ぶと、地図の上に詳細を表示します。</p>
+      </InfoHint>
+    </div>
+    <fieldset className="segmented metric-picker" disabled={!snapshot || !visible}>
+      <legend className="visually-hidden">地図に表示する観測値</legend>
       {metrics.map(item => <button key={item.id} type="button" aria-pressed={metric === item.id} onClick={() => onMetric(item.id)}>{item.label}</button>)}
     </fieldset>
-    <p className="legend-note">
-      {metric === 'temperature' && '寒色から暖色へ、気温の低い地点から高い地点を示します。'}
-      {metric === 'precipitation' && '青から紫へ、直近1時間の降水量が多い地点を示します。'}
-      {metric === 'wind' && '矢印は風が吹いていく向き、長さは風速を示します。色も風速です。矢印が重なる地点は、拡大すると表示されます。'}
-    </p>
     <div className={`metric-scale ${metric}`} aria-label={`${scaleLabels[metric][0]}から${scaleLabels[metric][1]}までの色分け`}>
       <span>{scaleLabels[metric][0]}</span><i aria-hidden="true" /><span>{scaleLabels[metric][1]}</span>
     </div>
@@ -67,7 +73,6 @@ export function AmedasControls({
     </div>
     {stale && <p className="warning-text">観測データが{config.amedasStaleAfterMs / 60_000}分以上古くなっています。</p>}
     {state.error && <p className="warning-text">{state.error}{snapshot && ' 取得済みの観測値を維持しています。'}</p>}
-    {!hasSelection && <p className="station-prompt">地図上の観測地点を選ぶと、地図の上に詳細を表示します。</p>}
     <button className="subtle-button" type="button" disabled={state.phase === 'loading'} onClick={onRefresh}>アメダスを更新</button>
   </PanelSection>;
 }

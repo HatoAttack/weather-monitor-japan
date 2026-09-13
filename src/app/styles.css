@@ -11,13 +11,40 @@ button{padding:0 var(--space-4);font:var(--text-subheadline);font-weight:600;col
 button:active:enabled{opacity:.6}
 button:disabled{opacity:.4;cursor:default}
 select{padding:0 var(--space-3);color:var(--color-label)}
-.refresh,.play-button,.speed-picker button[aria-pressed=true],.metric-picker button[aria-pressed=true]{background:var(--color-tint-fill);color:var(--color-on-tint)}
+.refresh,.play-button{background:var(--color-tint-fill);color:var(--color-on-tint)}
 @media (hover:hover){
-  button:hover:enabled:not(.refresh,.play-button,[aria-pressed=true]){background:var(--color-fill-secondary)}
-  :is(.refresh,.play-button,[aria-pressed=true]):hover:enabled{filter:brightness(.9)}
+  button:hover:enabled:not(.refresh,.play-button,.segmented button){background:var(--color-fill-secondary)}
+  .segmented button:hover:enabled:not([aria-pressed=true]){background:var(--color-fill-tertiary)}
+  :is(.refresh,.play-button):hover:enabled{filter:brightness(.9)}
 }
 .toggle{display:flex;align-items:center;gap:var(--space-3);min-height:var(--hit-min);font:var(--text-body);cursor:pointer}
-.toggle input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--color-tint-fill)}
+/* Plain checkboxes only; a switch sets its own size, which this rule would otherwise override. */
+.toggle input:not(.switch){flex:none;width:22px;height:22px;margin:0;accent-color:var(--color-tint-fill)}
+/* HIG's switch, drawn on a native checkbox so it stays a checkbox to assistive software. */
+.switch{position:relative;appearance:none;flex:none;width:44px;height:26px;margin:0;border-radius:13px;background:var(--color-fill);cursor:pointer;transition:background var(--duration-short)}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform var(--duration-short)}
+.switch:checked{background:var(--color-tint-fill)}
+.switch:checked::after{transform:translateX(18px)}
+.switch:disabled{opacity:.4;cursor:default}
+.toggle:has(.switch){gap:var(--space-3)}
+/* The item name holds one line; a note beside it wraps on its own instead. */
+.toggle-name{flex:none;white-space:nowrap}
+.toggle>.muted{flex:1 1 auto;min-width:0;font:var(--text-subheadline)}
+@media (forced-colors:active){
+  .switch{border:1px solid currentColor}
+  .switch:checked{background:Highlight}
+}
+
+/* Segmented control: one track, the chosen segment raised on it. */
+.segmented{display:flex;gap:2px;margin:0;padding:2px;border:0;border-radius:var(--radius-s);background:var(--color-fill-tertiary)}
+.segmented button{flex:1;min-width:0;min-height:var(--hit-min);padding:0 var(--space-2);border-radius:6px;background:none;font:var(--text-subheadline);font-weight:400;color:var(--color-label);box-shadow:none}
+.segmented button[aria-pressed=true]{background:var(--color-bg-elevated);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.16),var(--control-edge)}
+.segmented:disabled{opacity:.5}
+.segmented button svg{width:24px;height:16px}
+/* Every segment is a target in its own right, so each one is 44px tall. */
+.segmented{min-height:calc(var(--hit-min) + 4px)}
+
+.visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .muted{color:var(--color-label-secondary)}
 
 /* Everything floating over the map shares one material. */
@@ -31,9 +58,13 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 
 .brand{display:flex;align-items:center;gap:var(--space-3)}
 .brand-mark{font-size:28px;line-height:1;color:var(--color-tint)}
-.brand p{margin:0;font:var(--text-caption2);letter-spacing:.08em;color:var(--color-label-secondary)}
-.brand p span{letter-spacing:0;margin-left:var(--space-2)}
+.brand p{display:flex;align-items:baseline;gap:var(--space-2);margin:0;font:var(--text-caption2);letter-spacing:.08em;color:var(--color-label-secondary)}
+.brand-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brand-name span{letter-spacing:0;margin-left:var(--space-2)}
 .brand h1{margin:0;font:var(--text-title2)}
+.brand>div{flex:1;min-width:0}
+/* Beside the eyebrow, so the app name keeps the full width of the panel. */
+.wall-clock{margin-left:auto;font:var(--text-caption1);letter-spacing:0;color:var(--color-label-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* Desktop: a sidebar floating on the map. Narrow screens turn it into a bottom sheet below. */
 .panel{--panel-margin:var(--space-5);position:absolute;z-index:2;left:0;top:0;width:370px;max-height:calc(100% - 2 * var(--panel-margin));overflow-y:auto;margin:var(--panel-margin);padding:0 var(--space-5) var(--space-4);border:1px solid var(--color-material-edge);border-radius:var(--radius-l);box-shadow:var(--shadow-floating)}
@@ -43,14 +74,17 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 
 .panel-section{border-top:1px solid var(--color-separator)}
 .panel-section:first-of-type{border-top:0}
-.panel-section>summary{display:flex;align-items:center;gap:var(--space-2);min-height:var(--hit-min);padding:var(--space-3) 0;cursor:pointer;list-style:none}
+.panel-section>summary{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1);min-height:var(--hit-min);padding:var(--space-3) 0;cursor:pointer;list-style:none}
 .panel-section>summary::-webkit-details-marker{display:none}
 /* A chevron that turns from right to down as the section opens. */
 .panel-section>summary::after{content:"";flex:none;width:8px;height:8px;margin:0 var(--space-1);border:solid var(--color-label-secondary);border-width:0 2px 2px 0;transform:rotate(-45deg);transition:transform var(--duration-short)}
 .panel-section[open]>summary::after{transform:rotate(45deg)}
-.panel-section>summary h2{margin:0;font:var(--text-headline)}
-.panel-section>summary .section-sub{font:var(--text-footnote);color:var(--color-label-secondary)}
-.summary-status{display:flex;align-items:center;gap:6px;margin-left:auto;font:var(--text-subheadline);font-variant-numeric:tabular-nums}
+.summary-switch{flex:none;display:inline-flex;align-items:center;justify-content:center;height:var(--hit-min);margin-right:var(--space-1);cursor:pointer}
+/* The switch takes room from the row. Title and subtitle each hold one line;
+   when a long subtitle leaves no room, the row wraps rather than truncating it. */
+.panel-section>summary h2{flex:none;margin:0;font:var(--text-headline);white-space:nowrap}
+.panel-section>summary .section-sub{flex:none;white-space:nowrap;font:var(--text-footnote);color:var(--color-label-secondary)}
+.summary-status{flex:none;display:flex;align-items:center;gap:var(--space-1);margin-left:auto;padding-left:var(--space-1);font:var(--text-footnote);font-variant-numeric:tabular-nums}
 .panel-section-body{padding-bottom:var(--space-4)}
 .display-note{margin:0 0 var(--space-2);font:var(--text-footnote);color:var(--color-label-secondary)}
 
@@ -76,28 +110,42 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 .source-note{margin:var(--space-3) 0 0;font:var(--text-caption1);color:var(--color-label-secondary)}
 
 .timeline{margin:var(--space-3) 0 var(--space-4);padding:var(--space-4) 0;border-block:1px solid var(--color-separator)}
-.timeline-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-3);font:var(--text-subheadline)}
+.timeline-heading{display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-3);font:var(--text-subheadline)}
+.timeline-heading label{flex:1;min-width:0}
 .timeline-heading label span{display:block;font:var(--text-caption1)}
 .timeline-controls{display:flex;gap:var(--space-2)}
 .timeline-controls select{flex:1;width:0;font-variant-numeric:tabular-nums}
-.timeline-controls button{width:var(--hit-min);padding:0;font:var(--text-body)}
+.timeline-controls button{width:var(--hit-min);padding:0}
+.timeline-controls button svg{width:20px;height:20px}
 .timeline input[type=range]{width:100%;min-height:var(--hit-min);margin:var(--space-1) 0 0;accent-color:var(--color-tint-fill)}
 .timeline-ends{display:flex;justify-content:space-between;font:var(--text-caption1);color:var(--color-label-secondary);font-variant-numeric:tabular-nums}
 .timeline-now{color:var(--color-label)}
-.timeline-player{display:flex;align-items:flex-end;gap:var(--space-3);margin-top:var(--space-3)}
-.play-button{display:inline-flex;align-items:center;gap:var(--space-2)}
-.play-button span{font:var(--text-caption1)}
-.speed-picker{flex:1;min-width:0;border:0;padding:0;margin:0}
-.speed-picker legend{padding:0;margin-bottom:var(--space-1);font:var(--text-caption1);color:var(--color-label-secondary)}
-.speed-picker>div{display:flex;gap:var(--space-1)}
-.speed-picker button{flex:1;min-width:0;padding:0 var(--space-1);font-weight:400}
-.speed-picker:disabled,.metric-picker:disabled{opacity:.5}
+.timeline-player{display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-3)}
+/* Icon only: the label lives in aria-label, as HIG's play control does. */
+.play-button{display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--hit-min);padding:0;border-radius:50%}
+.play-button svg{width:24px;height:24px}
+.speed-picker{flex:1;min-width:0}
 .repeat-toggle{margin-top:var(--space-2);font:var(--text-subheadline)}
 
-.metric-picker{display:grid;grid-template-columns:.75fr 1.45fr .65fr;gap:var(--space-1);margin:var(--space-2) 0 0;padding:0;border:0}
-.metric-picker legend{margin-bottom:var(--space-2);padding:0;font:var(--text-footnote);color:var(--color-label-secondary)}
-.metric-picker button{padding:0 var(--space-1);font-weight:400}
+.metric-picker{margin:var(--space-1) 0 var(--space-3)}
 .legend-note,.station-prompt{margin:var(--space-2) 0 6px;font:var(--text-footnote);color:var(--color-label-secondary)}
+
+/* A row that pairs a control with the ⓘ button explaining it. */
+.control-row{display:flex;align-items:center;gap:var(--space-2)}
+.control-row .toggle{flex:1;min-width:0}
+.row-label{flex:1;margin:0;font:var(--text-body)}
+.info-hint{position:relative;flex:none;display:inline-flex}
+.info-button{display:inline-flex;align-items:center;justify-content:center;width:var(--hit-min);height:var(--hit-min);padding:0;background:none;color:var(--color-tint)}
+.info-button svg{width:22px;height:22px}
+.info-button:hover:enabled{background:none}
+/* The explanation shows on hover, on tap and while the button keeps focus. */
+.info-popup{position:absolute;z-index:5;right:0;top:calc(100% - var(--space-2));width:264px;max-width:calc(100vw - 2 * var(--space-5));padding:var(--space-3);border:1px solid var(--color-material-edge);border-radius:var(--radius-m);background:var(--color-bg-elevated);box-shadow:var(--shadow-floating);font:var(--text-footnote);color:var(--color-label);visibility:hidden;opacity:0;transition:opacity var(--duration-short)}
+.info-popup p{margin:0}
+.info-popup p+p{margin-top:var(--space-2)}
+.info-hint[data-placement=up] .info-popup{top:auto;bottom:calc(100% - var(--space-2))}
+.info-hint:hover .info-popup,.info-hint:focus-within .info-popup,.info-hint-open .info-popup{visibility:visible;opacity:1}
+/* Beats the hover and focus rules above, so Escape closes the text while the button keeps focus. */
+.info-hint.info-hint-dismissed .info-popup{visibility:hidden;opacity:0}
 .metric-scale{display:flex;align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);font:var(--text-caption1);color:var(--color-label-secondary);font-variant-numeric:tabular-nums}
 .metric-scale i{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#314bb8,#3a9bdc,#42a76b,#e6b836,#de4735)}
 .metric-scale.precipitation i{background:linear-gradient(90deg,#d8e5e9,#63bce1,#168bc3,#674bb6,#a12670)}
@@ -150,6 +198,9 @@ select{padding:0 var(--space-3);color:var(--color-label)}
   .panel:not(.panel-open) .panel-body,.panel:not(.panel-open) .brand{display:none}
   .panel-header{padding:0}
   .brand h1{font:var(--text-headline)}
+  /* Only the app name and the clock remain; the eyebrow text goes. */
+  .brand p{font:var(--text-caption1)}
+  .brand-name{display:none}
   .brand-mark{font-size:24px}
   .sheet-handle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;padding:0;background:none;font:var(--text-subheadline);font-weight:600}
   .sheet-handle:hover:enabled{background:none}

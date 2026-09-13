@@ -63,3 +63,22 @@ for (const feature of [{ name: 'prefers-reduced-transparency', value: 'reduce' }
     await expect(panel(page)).toHaveCSS('backdrop-filter', 'none');
   });
 }
+
+test('switches keep their size and stay clear of their labels', async ({ page }) => {
+  await stubData(page);
+  await page.goto('/');
+  const closed = page.locator('details:not([open]) > summary');
+  while (await closed.count()) await closed.first().click();
+  // A plain-checkbox rule once squeezed switches to 22px, sliding the knob over the label.
+  const clashes = await page.evaluate(() => [...document.querySelectorAll('.toggle .switch')]
+    .map(input => {
+      const box = input.getBoundingClientRect();
+      const label = input.closest('label')!;
+      const text = label.querySelector('.toggle-name') ?? [...label.childNodes].find(node => node.nodeType === Node.TEXT_NODE)!;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      return { name: label.textContent?.trim(), width: box.width, gap: range.getBoundingClientRect().left - box.right };
+    })
+    .filter(item => item.width !== 44 || item.gap < 8));
+  expect(clashes).toEqual([]);
+});

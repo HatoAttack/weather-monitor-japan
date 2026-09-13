@@ -18,6 +18,8 @@ export const config = {
   // Municipality shapes are requested once the map has stopped moving for this long.
   warningShapeSettleMs: 400,
   clockIntervalMs: 30_000,
+  // The wall clock in the panel header shows seconds, so it ticks every second.
+  wallClockIntervalMs: 1_000,
   historyLimit: 13,
   map: { center: [137, 36] as [number, number], zoom: 4.5, minZoom: 3, maxZoom: 12 },
   playback: {
