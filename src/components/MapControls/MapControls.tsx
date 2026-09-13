@@ -28,7 +28,7 @@ export function MapControls({ shown, onChange }: Props) {
     </div>
     {features.map(feature => <label key={feature.id} className="toggle">
       <input type="checkbox" className="switch" checked={shown[feature.id]} onChange={event => onChange(feature.id, event.target.checked)} />
-      {feature.label}{feature.note && <span className="muted"> {feature.note}</span>}
+      <span className="toggle-name">{feature.label}</span>{feature.note && <span className="muted">{feature.note}</span>}
     </label>)}
   </PanelSection>;
 }

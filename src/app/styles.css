@@ -27,6 +27,9 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 .switch:checked::after{transform:translateX(18px)}
 .switch:disabled{opacity:.4;cursor:default}
 .toggle:has(.switch){gap:var(--space-3)}
+/* The item name holds one line; a note beside it wraps on its own instead. */
+.toggle-name{flex:none;white-space:nowrap}
+.toggle>.muted{flex:1 1 auto;min-width:0;font:var(--text-subheadline)}
 @media (forced-colors:active){
   .switch{border:1px solid currentColor}
   .switch:checked{background:Highlight}
