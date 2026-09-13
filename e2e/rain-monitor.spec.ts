@@ -101,6 +101,8 @@ test('first-load errors allow retry and a narrow layout stays usable', async ({ 
 });
 
 test('precipitation stays visible across zoom levels JMA leaves empty', async ({ page }) => {
+  // Seven zoom levels, each compared by screenshot on software WebGL, need more than the shared timeout.
+  test.setTimeout(120_000);
   await mockAmedas(page);
   await page.route('**/targetTimes_N1.json', route => route.fulfill({ json: [row(time(5)), row(time(0))] }));
   // The nowcast is fetched alongside; these tests cover observations only.
@@ -124,9 +126,19 @@ test('precipitation stays visible across zoom levels JMA leaves empty', async ({
   const layer = page.getByRole('checkbox', { name: '降水レイヤーを表示' });
   const zoomOut = page.getByRole('button', { name: 'Zoom out' });
   const zoomIn = page.getByRole('button', { name: 'Zoom in' });
+  // A zoom level draws once its tiles arrive. Waiting for the requests to stop
+  // keeps the comparison below from starting on a half-drawn map.
+  const tilesSettled = async () => {
+    for (let idle = 0; idle < 1;) {
+      const before = requested.length;
+      await page.waitForTimeout(400);
+      idle = requested.length === before ? idle + 1 : 0;
+    }
+  };
   for (let step = 0; step < 4; step++) await zoomOut.click();
   for (let step = 0; step <= 6; step++) {
     if (step) await zoomIn.click();
+    await tilesSettled();
     await expect(async () => {
       const withRain = await page.screenshot({ clip });
       await layer.uncheck();
