@@ -1,5 +1,6 @@
 import type { BaseMapFeature } from '../WeatherMap/baseMap';
 import { PanelSection } from '../PanelSection/PanelSection';
+import { InfoHint } from '../InfoHint/InfoHint';
 
 const features: { id: BaseMapFeature; label: string; note: string }[] = [
   { id: 'elevation', label: '標高の色分け', note: '広域表示では出ません' },
@@ -19,7 +20,12 @@ export function MapControls({ shown, onChange }: Props) {
     id="section-map" className="map-controls" title="地図" subtitle="背景の要素"
     status={<span>{count}/{features.length}</span>}
   >
-    <p className="legend-note">背景地図に重ねる要素を選べます。海岸線、県境、地名は常に表示します。</p>
+    <div className="control-row">
+      <p className="row-label">背景地図に重ねる要素</p>
+      <InfoHint label="背景の要素についての説明">
+        <p>背景地図に重ねる要素を選べます。海岸線、県境、地名は常に表示します。</p>
+      </InfoHint>
+    </div>
     {features.map(feature => <label key={feature.id} className="toggle">
       <input type="checkbox" checked={shown[feature.id]} onChange={event => onChange(feature.id, event.target.checked)} />
       {feature.label}{feature.note && <span className="muted"> {feature.note}</span>}

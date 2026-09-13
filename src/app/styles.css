@@ -98,6 +98,23 @@ select{padding:0 var(--space-3);color:var(--color-label)}
 .metric-picker legend{margin-bottom:var(--space-2);padding:0;font:var(--text-footnote);color:var(--color-label-secondary)}
 .metric-picker button{padding:0 var(--space-1);font-weight:400}
 .legend-note,.station-prompt{margin:var(--space-2) 0 6px;font:var(--text-footnote);color:var(--color-label-secondary)}
+
+/* A row that pairs a control with the ⓘ button explaining it. */
+.control-row{display:flex;align-items:center;gap:var(--space-2)}
+.control-row .toggle{flex:1;min-width:0}
+.row-label{flex:1;margin:0;font:var(--text-body)}
+.info-hint{position:relative;flex:none;display:inline-flex}
+.info-button{display:inline-flex;align-items:center;justify-content:center;width:var(--hit-min);height:var(--hit-min);padding:0;background:none;color:var(--color-tint)}
+.info-button svg{width:22px;height:22px}
+.info-button:hover:enabled{background:none}
+/* The explanation shows on hover, on tap and while the button keeps focus. */
+.info-popup{position:absolute;z-index:5;right:0;top:calc(100% - var(--space-2));width:264px;max-width:calc(100vw - 2 * var(--space-5));padding:var(--space-3);border:1px solid var(--color-material-edge);border-radius:var(--radius-m);background:var(--color-bg-elevated);box-shadow:var(--shadow-floating);font:var(--text-footnote);color:var(--color-label);visibility:hidden;opacity:0;transition:opacity var(--duration-short)}
+.info-popup p{margin:0}
+.info-popup p+p{margin-top:var(--space-2)}
+.info-hint[data-placement=up] .info-popup{top:auto;bottom:calc(100% - var(--space-2))}
+.info-hint:hover .info-popup,.info-hint:focus-within .info-popup,.info-hint-open .info-popup{visibility:visible;opacity:1}
+/* Beats the hover and focus rules above, so Escape closes the text while the button keeps focus. */
+.info-hint.info-hint-dismissed .info-popup{visibility:hidden;opacity:0}
 .metric-scale{display:flex;align-items:center;gap:var(--space-2);margin:0 0 var(--space-3);font:var(--text-caption1);color:var(--color-label-secondary);font-variant-numeric:tabular-nums}
 .metric-scale i{flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#314bb8,#3a9bdc,#42a76b,#e6b836,#de4735)}
 .metric-scale.precipitation i{background:linear-gradient(90deg,#d8e5e9,#63bce1,#168bc3,#674bb6,#a12670)}

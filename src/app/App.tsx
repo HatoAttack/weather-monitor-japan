@@ -7,6 +7,7 @@ import { StationCard } from '../components/StationCard/StationCard';
 import { WarningCard } from '../components/WarningCard/WarningCard';
 import { WarningControls } from '../components/WarningControls/WarningControls';
 import { WeatherMap } from '../components/WeatherMap/WeatherMap';
+import { InfoHint } from '../components/InfoHint/InfoHint';
 import type { LayerStatus } from '../components/WeatherMap/RainLayer';
 import type { BaseMapFeature } from '../components/WeatherMap/baseMap';
 import { Timeline } from '../components/Timeline/Timeline';
@@ -112,7 +113,6 @@ export function App() {
           <WarningControls
             state={warningMonitor}
             visible={warningVisible}
-            hasSelection={!!selectedArea && warningVisible}
             now={monitor.now}
             onVisible={setWarningVisible}
             onRefresh={() => void warningMonitor.refresh()}
@@ -121,7 +121,6 @@ export function App() {
             state={amedasMonitor}
             metric={amedasMetric}
             visible={amedasVisible}
-            hasSelection={!!selectedStation && amedasVisible}
             now={monitor.now}
             onMetric={setAmedasMetric}
             onVisible={setAmedasVisible}
@@ -143,12 +142,19 @@ export function App() {
               <span data-testid="displayed-time">{visible && displayed ? formatTime(displayed.observedAt) : '未表示'}</span>
               {visible && displayed?.kind === 'forecast' && <span className="muted">予測</span>}</>}
           >
-            <p className="display-note">{visible ? '地図に表示中のデータ時刻（日本時間）' : '降水レイヤーは非表示'}</p>
             {visible && displayed?.kind === 'forecast'
               && <p className="forecast-note">予測 <time>{formatTime(displayed.issuedAt)}</time>時点の1時間先までの見通し</p>}
             {pending && isStale(displayed, monitor.now) && <p className="warning-text">表示中の画像は{config.staleAfterMs / 60_000}分以上前のデータです。</p>}
             {pending && <p className="pending-time">選択中 {formatTime(monitor.selected?.observedAt)}</p>}
-            <label className="toggle"><input type="checkbox" checked={visible} onChange={event => setVisible(event.target.checked)} />降水レイヤーを表示</label>
+            {/* The explanation moved into the hint; the hidden state has to stay on show. */}
+            {!visible && <p className="display-note">降水レイヤーは非表示</p>}
+            <div className="control-row">
+              <label className="toggle"><input type="checkbox" checked={visible} onChange={event => setVisible(event.target.checked)} />降水レイヤーを表示</label>
+              <InfoHint label="雨雲の表示についての説明">
+                <p>見出しの時刻は、地図に表示中のデータ時刻（日本時間）です。</p>
+                <p>実況の後ろに降水ナウキャストの1時間先までが並びます。予測の時刻は紫で示します。</p>
+              </InfoHint>
+            </div>
             <Timeline frames={monitor.frames} selectedId={monitor.selectedId} onSelect={player.select}
               playing={player.playing} canPlay={player.canPlay} speedId={player.speedId} speeds={player.speeds}
               loop={player.loop} onTogglePlay={player.toggle} onSpeed={player.setSpeed} onLoop={player.setLoop} />

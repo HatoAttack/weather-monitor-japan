@@ -137,7 +137,7 @@ Apple Human Interface Guidelines（HIG）に沿って画面を見直し、地図
 
 Status:
 
-段階1（土台）を `claude/v0.7-ui-foundation`、段階2（配置）を `claude/v0.7-ui-layout` で実装。検証結果は `docs/VALIDATION_v0.7.md`。
+段階1（土台）を `claude/v0.7-ui-foundation`、段階2（配置）を `claude/v0.7-ui-layout` で実装。説明のⓘへの収納を `claude/v0.7-info-hints` で追加。検証結果は `docs/VALIDATION_v0.7.md`。
 
 Steps（1段階＝1PR）:
 

@@ -4,6 +4,7 @@ import { isWarningStale } from '../../weather/services/warningMonitor';
 import { topTier, warningTierLabels, warningTiers } from '../../weather/domain/Warning';
 import { warningColours } from '../WeatherMap/WarningLayer';
 import { PanelSection } from '../PanelSection/PanelSection';
+import { InfoHint } from '../InfoHint/InfoHint';
 import { formatTime } from '../../utils/time';
 
 const phaseLabels = {
@@ -14,13 +15,12 @@ const phaseLabels = {
 type Props = {
   state: WarningMonitorState;
   visible: boolean;
-  hasSelection: boolean;
   now: number;
   onVisible: (visible: boolean) => void;
   onRefresh: () => void;
 };
 
-export function WarningControls({ state, visible, hasSelection, now, onVisible, onRefresh }: Props) {
+export function WarningControls({ state, visible, now, onVisible, onRefresh }: Props) {
   const snapshot = state.snapshot;
   const stale = isWarningStale(state, now);
   const counts = Object.fromEntries(warningTiers.map(tier =>
@@ -31,14 +31,20 @@ export function WarningControls({ state, visible, hasSelection, now, onVisible, 
     subtitle={snapshot ? (serious ? `警報以上 ${serious}区域` : '警報なし') : '発表区域'}
     status={<><span className={'status-dot ' + (state.error || stale ? 'warning' : '')} /><time>{formatTime(snapshot?.reportedAt ?? undefined)}</time></>}
   >
-    <label className="toggle"><input type="checkbox" checked={visible} onChange={event => onVisible(event.target.checked)} />警報・注意報を地図に表示</label>
+    <div className="control-row">
+      <label className="toggle"><input type="checkbox" checked={visible} onChange={event => onVisible(event.target.checked)} />警報・注意報を地図に表示</label>
+      <InfoHint label="警報・注意報の表示についての説明">
+        <p>区域ごとに、発表中で最も重いものの色で塗ります。</p>
+        <p>地図上の区域を選ぶと、発表中の警報・注意報を表示します。</p>
+        <p>全国表示では一次細分区域、拡大すると市町村で表示します。</p>
+      </InfoHint>
+    </div>
     <ul className="warning-legend" aria-label="発表中の区域数">
       {[...warningTiers].reverse().map(tier => <li key={tier}>
         <i aria-hidden="true" style={{ background: warningColours[tier] }} />
         <span>{warningTierLabels[tier]}</span><strong>{counts[tier]}</strong><span className="muted">区域</span>
       </li>)}
     </ul>
-    <p className="legend-note">区域ごとに、発表中で最も重いものの色で塗ります。最新の発表 {formatTime(snapshot?.reportedAt ?? undefined)}</p>
     <div className="amedas-status" role="status">
       <span className={'status-dot ' + (state.error || stale ? 'warning' : '')} />
       <strong>{phaseLabels[state.phase]}</strong>
@@ -48,7 +54,6 @@ export function WarningControls({ state, visible, hasSelection, now, onVisible, 
     {state.error && <p className="warning-text">{state.error}{snapshot && ' 取得済みの発表状況を表示しています。'}</p>}
     {!!snapshot?.unknownCodes.length
       && <p className="warning-text">アプリが名称を持たない種別コード（{snapshot.unknownCodes.join('、')}）が含まれています。地図には反映していません。</p>}
-    {!hasSelection && <p className="station-prompt">地図上の区域を選ぶと、発表中の警報・注意報を表示します。</p>}
     <button className="subtle-button" type="button" disabled={state.phase === 'loading'} onClick={onRefresh}>警報・注意報を更新</button>
   </PanelSection>;
 }
