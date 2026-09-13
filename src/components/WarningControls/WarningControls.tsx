@@ -29,10 +29,11 @@ export function WarningControls({ state, visible, now, onVisible, onRefresh }: P
   return <PanelSection
     id="section-warning" className="warning-controls" title="警報・注意報"
     subtitle={snapshot ? (serious ? `警報以上 ${serious}区域` : '警報なし') : '発表区域'}
+    toggle={{ label: '警報・注意報を地図に表示', checked: visible, onChange: onVisible }}
     status={<><span className={'status-dot ' + (state.error || stale ? 'warning' : '')} /><time>{formatTime(snapshot?.reportedAt ?? undefined)}</time></>}
   >
     <div className="control-row">
-      <label className="toggle"><input type="checkbox" checked={visible} onChange={event => onVisible(event.target.checked)} />警報・注意報を地図に表示</label>
+      <p className="row-label">発表中の区域数</p>
       <InfoHint label="警報・注意報の表示についての説明">
         <p>区域ごとに、発表中で最も重いものの色で塗ります。</p>
         <p>地図上の区域を選ぶと、発表中の警報・注意報を表示します。</p>

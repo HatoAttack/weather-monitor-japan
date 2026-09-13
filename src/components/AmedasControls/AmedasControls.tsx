@@ -45,10 +45,11 @@ export function AmedasControls({
   return <PanelSection
     id="section-amedas" className="amedas-controls" title="アメダス"
     subtitle={snapshot ? `${snapshot.stations.length.toLocaleString('ja-JP')}地点` : '観測地点'}
+    toggle={{ label: '観測値を地図に表示', checked: visible, onChange: onVisible }}
     status={<><span className={'status-dot ' + (state.error || stale ? 'warning' : '')} /><time>{formatTime(snapshot?.observedAt)}</time></>}
   >
     <div className="control-row">
-      <label className="toggle"><input type="checkbox" checked={visible} onChange={event => onVisible(event.target.checked)} />観測値を地図に表示</label>
+      <p className="row-label">地図に表示する観測値</p>
       <InfoHint label="観測値の表示についての説明">
         <p>
           {metric === 'temperature' && '寒色から暖色へ、気温の低い地点から高い地点を示します。'}
@@ -58,8 +59,8 @@ export function AmedasControls({
         <p>地図上の観測地点を選ぶと、地図の上に詳細を表示します。</p>
       </InfoHint>
     </div>
-    <fieldset className="metric-picker" disabled={!snapshot || !visible}>
-      <legend>地図に表示する観測値</legend>
+    <fieldset className="segmented metric-picker" disabled={!snapshot || !visible}>
+      <legend className="visually-hidden">地図に表示する観測値</legend>
       {metrics.map(item => <button key={item.id} type="button" aria-pressed={metric === item.id} onClick={() => onMetric(item.id)}>{item.label}</button>)}
     </fieldset>
     <div className={`metric-scale ${metric}`} aria-label={`${scaleLabels[metric][0]}から${scaleLabels[metric][1]}までの色分け`}>
