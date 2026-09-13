@@ -18,9 +18,10 @@ select{padding:0 var(--space-3);color:var(--color-label)}
   :is(.refresh,.play-button):hover:enabled{filter:brightness(.9)}
 }
 .toggle{display:flex;align-items:center;gap:var(--space-3);min-height:var(--hit-min);font:var(--text-body);cursor:pointer}
-.toggle input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--color-tint-fill)}
+/* Plain checkboxes only; a switch sets its own size, which this rule would otherwise override. */
+.toggle input:not(.switch){flex:none;width:22px;height:22px;margin:0;accent-color:var(--color-tint-fill)}
 /* HIG's switch, drawn on a native checkbox so it stays a checkbox to assistive software. */
-.switch{position:relative;appearance:none;flex:none;width:44px;height:26px;border-radius:13px;background:var(--color-fill);cursor:pointer;transition:background var(--duration-short)}
+.switch{position:relative;appearance:none;flex:none;width:44px;height:26px;margin:0;border-radius:13px;background:var(--color-fill);cursor:pointer;transition:background var(--duration-short)}
 .switch::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform var(--duration-short)}
 .switch:checked{background:var(--color-tint-fill)}
 .switch:checked::after{transform:translateX(18px)}
